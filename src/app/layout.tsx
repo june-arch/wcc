@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   keywords: ["wedding management", "booking system", "wedding photography", "WCC", "wedding planner", "manajemen pernikahan"],
   authors: [{ name: "WCC Oranye Capture" }],
   creator: "WCC Oranye Capture",
-  metadataBase: new URL("https://wcc.vercel.app"),
+  metadataBase: new URL("https://wcc-liart.vercel.app"),
   alternates: {
     canonical: "/",
   },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "id_ID",
-    url: "https://wcc.vercel.app",
+    url: "https://wcc-liart.vercel.app",
     siteName: "WCC Oranye Capture",
     title: "WCC Oranye Capture — Wedding Management",
     description: "Sistem manajemen booking & timeline wedding photography. Kelola jadwal, klien, dan dokumen pernikahan dengan mudah.",

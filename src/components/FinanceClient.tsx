@@ -79,20 +79,20 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {statCards.map((card) => (
-          <div key={card.label} className={cn("card p-5 border", card.border)}>
+          <div key={card.label} className={cn("card p-4 md:p-5 border", card.border)}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">{card.label}</p>
-                <p className="text-xl font-bold text-stone-900 mt-1 leading-tight">{card.value}</p>
+                <p className="text-lg md:text-xl font-bold text-stone-900 mt-1 leading-tight">{card.value}</p>
                 {card.pct !== undefined && (
                   <p className="text-xs text-stone-400 mt-1">{card.pct}% dari total</p>
                 )}
                 {card.sub && <p className="text-xs text-stone-400 mt-1">{card.sub}</p>}
               </div>
-              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0", card.color)}>
-                <card.icon size={17} />
+              <div className={cn("w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center shrink-0", card.color)}>
+                <card.icon size={16} className="md:w-[17px] md:h-[17px]" />
               </div>
             </div>
           </div>
@@ -102,7 +102,7 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
       <div className="grid lg:grid-cols-2 gap-6">
         {/* By month */}
         <div className="card">
-          <div className="px-5 py-4 border-b border-stone-100">
+          <div className="px-4 sm:px-5 py-4 border-b border-stone-100">
             <h2 className="font-bold text-stone-900 text-sm">Per Bulan</h2>
           </div>
           <div className="divide-y divide-stone-50">
@@ -134,10 +134,10 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
 
         {/* Per booking table */}
         <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-stone-100">
+          <div className="px-4 sm:px-5 py-4 border-b border-stone-100">
             <h2 className="font-bold text-stone-900 text-sm">Detail Per Booking</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-px">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-stone-50 border-b border-stone-100">

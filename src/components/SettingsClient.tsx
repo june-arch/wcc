@@ -25,14 +25,14 @@ export default function SettingsClient({ user }: Props) {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-2xl">
+    <div className="space-y-5 animate-fade-in max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold text-stone-900">Pengaturan</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-stone-900">Pengaturan</h1>
         <p className="text-stone-500 text-sm mt-0.5">Kelola akun dan preferensi</p>
       </div>
 
       {/* Profile section */}
-      <div className="card p-6 space-y-5">
+      <div className="card p-4 sm:p-6 space-y-5">
         <div className="flex items-center gap-3 pb-4 border-b border-stone-100">
           <User size={16} className="text-stone-400" />
           <h2 className="font-semibold text-stone-800 text-sm">Profil</h2>
@@ -78,7 +78,7 @@ export default function SettingsClient({ user }: Props) {
       </div>
 
       {/* App info */}
-      <div className="card p-6 space-y-4">
+      <div className="card p-4 sm:p-6 space-y-4">
         <div className="flex items-center gap-3 pb-4 border-b border-stone-100">
           <Info size={16} className="text-stone-400" />
           <h2 className="font-semibold text-stone-800 text-sm">Tentang Aplikasi</h2>
@@ -101,12 +101,12 @@ export default function SettingsClient({ user }: Props) {
       </div>
 
       {/* Danger zone */}
-      <div className="card p-6 border border-red-100 bg-red-50/30">
+      <div className="card p-4 sm:p-6 border border-red-100 bg-red-50/30">
         <h2 className="font-semibold text-red-700 text-sm mb-3">Zona Bahaya</h2>
         <p className="text-xs text-red-500 mb-4">
           Tindakan di bawah ini bersifat permanen dan tidak dapat dibatalkan.
         </p>
-        <button className="btn btn-danger text-xs px-4">Hapus Semua Data Booking</button>
+        <button className="btn btn-danger text-xs px-4 w-full sm:w-auto">Hapus Semua Data Booking</button>
       </div>
     </div>
   );

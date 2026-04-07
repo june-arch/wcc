@@ -2,41 +2,28 @@
 // src/components/LoginForm.tsx
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, signUp } from "@/lib/auth-client";
+import { signIn } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function LoginForm() {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "login") {
-        const { error } = await signIn.email({
-          email: form.email,
-          password: form.password,
-        });
-        if (error) throw new Error(error.message);
-        toast.success("Selamat datang kembali!");
-        router.push("/dashboard");
-        router.refresh();
-      } else {
-        const { error } = await signUp.email({
-          email: form.email,
-          password: form.password,
-          name: form.name,
-        });
-        if (error) throw new Error(error.message);
-        toast.success("Akun berhasil dibuat!");
-        router.push("/dashboard");
-        router.refresh();
-      }
+      const { error } = await signIn.email({
+        email: form.email,
+        password: form.password,
+      });
+      if (error) throw new Error(error.message);
+      toast.success("Selamat datang kembali!");
+      router.push("/dashboard");
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
@@ -47,29 +34,9 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-stone-900">
-          {mode === "login" ? "Masuk ke akun" : "Buat akun baru"}
-        </h2>
-        <p className="text-sm text-stone-500 mt-0.5">
-          {mode === "login"
-            ? "Masukkan email dan password Anda"
-            : "Lengkapi data untuk mendaftar"}
-        </p>
+        <h2 className="text-lg font-semibold text-stone-900">Masuk ke akun</h2>
+        <p className="text-sm text-stone-500 mt-0.5">Masukkan email dan password Anda</p>
       </div>
-
-      {mode === "register" && (
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-1.5">Nama Lengkap</label>
-          <input
-            className="input-base"
-            type="text"
-            placeholder="Nama Anda"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-          />
-        </div>
-      )}
 
       <div>
         <label className="block text-sm font-medium text-stone-700 mb-1.5">Email</label>
@@ -113,32 +80,10 @@ export default function LoginForm() {
       >
         {loading ? (
           <><Loader2 size={16} className="animate-spin" /> Memproses...</>
-        ) : mode === "login" ? (
-          "Masuk"
         ) : (
-          "Daftar"
+          "Masuk"
         )}
       </button>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-stone-200" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="px-2 bg-white text-stone-400">atau</span>
-        </div>
-      </div>
-
-      <p className="text-center text-sm text-stone-500">
-        {mode === "login" ? "Belum punya akun?" : "Sudah punya akun?"}{" "}
-        <button
-          type="button"
-          onClick={() => setMode(mode === "login" ? "register" : "login")}
-          className="font-medium text-orange-600 hover:text-orange-700 underline underline-offset-2"
-        >
-          {mode === "login" ? "Daftar sekarang" : "Masuk"}
-        </button>
-      </p>
     </form>
   );
 }

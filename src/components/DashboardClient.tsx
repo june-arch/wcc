@@ -82,24 +82,24 @@ export default function DashboardClient({ stats, upcomingBookings, pendingTasks 
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {statCards.map((card) => (
-          <div key={card.label} className={cn("card p-5 border", card.border)}>
+          <div key={card.label} className={cn("card p-4 md:p-5 border", card.border)}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">{card.label}</p>
-                <p className="text-2xl font-bold text-stone-900 mt-1 leading-none">{card.value}</p>
+                <p className="text-xl md:text-2xl font-bold text-stone-900 mt-1 leading-none">{card.value}</p>
                 <p className="text-xs text-stone-400 mt-1.5">{card.sub}</p>
               </div>
-              <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", card.color)}>
-                <card.icon size={18} />
+              <div className={cn("w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center", card.color)}>
+                <card.icon size={16} className="md:w-[18px] md:h-[18px]" />
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-1 gap-6">
         {/* Upcoming bookings */}
         <div className="card">
           <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
@@ -151,47 +151,6 @@ export default function DashboardClient({ stats, upcomingBookings, pendingTasks 
                   </Link>
                 );
               })
-            )}
-          </div>
-        </div>
-
-        {/* Pending tasks */}
-        <div className="card">
-          <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-stone-900 text-sm">To Do List</h2>
-              <p className="text-xs text-stone-400 mt-0.5">Task yang belum selesai</p>
-            </div>
-            <Link href="/dashboard/bookings" className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
-              Lihat semua <ArrowRight size={12} />
-            </Link>
-          </div>
-          <div className="divide-y divide-stone-50">
-            {pendingTasks.length === 0 ? (
-              <div className="px-5 py-8 text-center text-stone-400 text-sm">
-                <CheckCircle2 size={24} className="mx-auto mb-2 text-emerald-400" />
-                Semua task sudah selesai! 🎉
-              </div>
-            ) : (
-              pendingTasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 px-5 py-3 hover:bg-stone-50 transition-colors">
-                  <div className={cn(
-                    "w-2 h-2 rounded-full shrink-0",
-                    task.priority === "HIGH" ? "bg-red-400" :
-                    task.priority === "MEDIUM" ? "bg-amber-400" : "bg-stone-300"
-                  )} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-stone-800 truncate">{task.title}</p>
-                    <p className="text-xs text-stone-400 truncate">{task.booking.clientName}</p>
-                  </div>
-                  <span className={cn(
-                    "text-[11px] font-medium px-2 py-0.5 rounded-full",
-                    task.status === "IN_PROGRESS" ? "bg-blue-50 text-blue-600" : "bg-stone-100 text-stone-500"
-                  )}>
-                    {task.status === "IN_PROGRESS" ? "On Progress" : "Todo"}
-                  </span>
-                </div>
-              ))
             )}
           </div>
         </div>

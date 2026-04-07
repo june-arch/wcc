@@ -20,7 +20,15 @@
   --border-strong: #D6D3D1;
 
   --sidebar-w: 240px;
-  --header-h: 60px;
+  --header-h: 56px;
+}
+
+/* Mobile responsive variables */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-w: 0px;
+    --header-h: 52px;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -188,4 +196,46 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.02em; color: var(-
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
   border-radius: 6px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .calendar-cell {
+    min-height: 60px;
+    padding: 2px;
+  }
+  
+  /* Make buttons more touch-friendly */
+  .btn {
+    min-height: 40px;
+  }
+  
+  /* Improve input touch targets */
+  .input-base {
+    min-height: 40px;
+  }
+  
+  /* Sidebar link touch targets */
+  .sidebar-link {
+    min-height: 44px;
+  }
+}
+
+/* Small mobile screens */
+@media (max-width: 480px) {
+  .calendar-cell {
+    min-height: 48px;
+  }
+}
+
+/* Safe area for mobile bottom nav (iPhone X+ notch area) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide sidebar on mobile - already hidden but ensure override */
+@media (max-width: 768px) {
+  .sidebar-nav {
+    display: none !important;
+  }
 }

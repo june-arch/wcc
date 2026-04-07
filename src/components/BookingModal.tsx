@@ -86,15 +86,15 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ background: "rgba(0,0,0,0.45)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-slide-up">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 sticky top-0 bg-white z-10 rounded-t-2xl">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-stone-100 sticky top-0 bg-white z-10 rounded-t-2xl">
           <div>
-            <h2 className="font-bold text-stone-900">Tambah Booking Baru</h2>
+            <h2 className="font-bold text-stone-900 text-sm sm:text-base">Tambah Booking Baru</h2>
             <p className="text-xs text-stone-400 mt-0.5">Isi data booking wedding</p>
           </div>
           <button onClick={onClose} className="btn btn-ghost w-8 h-8 p-0 justify-center">
@@ -102,7 +102,7 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
           {/* Nama klien */}
           <div>
             <label className="block text-sm font-semibold text-stone-700 mb-1.5">
@@ -252,11 +252,11 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
           </label>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="btn btn-secondary flex-1">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="button" onClick={onClose} className="btn btn-secondary flex-1 order-2 sm:order-1">
               Batal
             </button>
-            <button type="submit" disabled={loading} className="btn btn-primary flex-1 justify-center">
+            <button type="submit" disabled={loading} className="btn btn-primary flex-1 justify-center order-1 sm:order-2">
               {loading
                 ? <><Loader2 size={15} className="animate-spin" /> Menyimpan...</>
                 : "Simpan Booking"

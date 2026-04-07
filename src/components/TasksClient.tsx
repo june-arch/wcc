@@ -98,7 +98,7 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskWithBo
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-stone-900">To Do List</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-stone-900">To Do List</h1>
         <p className="text-stone-500 text-sm mt-0.5">
           {doneCount} dari {tasks.length} task selesai
         </p>
@@ -121,23 +121,23 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskWithBo
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative flex-1 min-w-0">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
           <input
-            className="input-base pl-9 py-2 text-sm"
+            className="input-base pl-9 py-2 text-sm w-full"
             placeholder="Cari task atau nama klien..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-1.5 bg-stone-100 rounded-lg p-1">
+        <div className="flex items-center gap-1.5 bg-stone-100 rounded-lg p-1 overflow-x-auto">
           {(["ALL", "TODO", "IN_PROGRESS", "DONE"] as const).map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
               className={cn(
-                "px-3 py-1 rounded-md text-xs font-medium transition-all",
+                "px-2 sm:px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap",
                 filterStatus === s ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
               )}
             >
@@ -145,13 +145,13 @@ export default function TasksClient({ initialTasks }: { initialTasks: TaskWithBo
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1.5 bg-stone-100 rounded-lg p-1">
+        <div className="flex items-center gap-1.5 bg-stone-100 rounded-lg p-1 overflow-x-auto">
           {(["ALL", "HIGH", "MEDIUM", "LOW"] as const).map((p) => (
             <button
               key={p}
               onClick={() => setFilterPriority(p)}
               className={cn(
-                "px-3 py-1 rounded-md text-xs font-medium transition-all",
+                "px-2 sm:px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap",
                 filterPriority === p ? "bg-white text-stone-900 shadow-sm" : "text-stone-500 hover:text-stone-700"
               )}
             >

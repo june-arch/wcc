@@ -96,14 +96,14 @@ export default function BookingsClient({ initialBookings }: Props) {
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Booking</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-stone-900">Booking</h1>
           <p className="text-stone-500 text-sm mt-0.5">
             {filtered.length} dari {bookings.length} booking
           </p>
         </div>
-        <button onClick={() => setShowAddModal(true)} className="btn btn-primary gap-2 shrink-0">
+        <button onClick={() => setShowAddModal(true)} className="btn btn-primary gap-2 shrink-0 justify-center w-full sm:w-auto">
           <Plus size={16} />
           <span className="hidden sm:inline">Tambah Booking</span>
           <span className="sm:hidden">Tambah</span>
@@ -111,24 +111,24 @@ export default function BookingsClient({ initialBookings }: Props) {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div className="relative flex-1 min-w-0">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
           <input
-            className="input-base pl-9 py-2 text-sm"
+            className="input-base pl-9 py-2 text-sm w-full"
             placeholder="Cari nama, hashtag, lokasi..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        <div className="flex items-center gap-1 bg-stone-100 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-stone-100 rounded-lg p-1 overflow-x-auto">
           {statusOptions.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setFilterStatus(opt.value)}
               className={cn(
-                "px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap",
+                "px-2 sm:px-3 py-1 rounded-md text-xs font-medium transition-all whitespace-nowrap",
                 filterStatus === opt.value
                   ? "bg-white text-stone-900 shadow-sm"
                   : "text-stone-500 hover:text-stone-700"
@@ -139,7 +139,7 @@ export default function BookingsClient({ initialBookings }: Props) {
           ))}
         </div>
 
-        <div className="flex items-center bg-stone-100 rounded-lg p-1 gap-1">
+        <div className="flex items-center bg-stone-100 rounded-lg p-1 gap-1 shrink-0">
           <button
             onClick={() => setView("list")}
             className={cn(
@@ -164,7 +164,7 @@ export default function BookingsClient({ initialBookings }: Props) {
       </div>
 
       {/* Content */}
-      <div className="flex gap-5">
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-5">
         <div className={cn("flex-1 min-w-0", selectedBooking && "hidden lg:block")}>
           {view === "list" ? (
             <ListView
@@ -188,12 +188,14 @@ export default function BookingsClient({ initialBookings }: Props) {
         </div>
 
         {selectedBooking && (
-          <div className="w-full lg:w-96 shrink-0 animate-slide-in">
-            <BookingDetailPanel
-              booking={selectedBooking}
-              onClose={() => setSelectedBooking(null)}
-              onPatch={patchBooking}
-            />
+          <div className="w-full lg:w-80 xl:w-96 shrink-0 animate-slide-in fixed inset-0 z-40 lg:static lg:z-auto bg-white lg:bg-transparent">
+            <div className="h-full lg:h-auto overflow-y-auto">
+              <BookingDetailPanel
+                booking={selectedBooking}
+                onClose={() => setSelectedBooking(null)}
+                onPatch={patchBooking}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -246,14 +248,14 @@ function ListView({
               key={b.id}
               onClick={() => onSelect(b)}
               className={cn(
-                "w-full flex items-center gap-4 px-5 py-4 text-left transition-colors border-l-2",
+                "w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors border-l-2",
                 isSelected
                   ? "bg-orange-50 border-l-orange-400"
                   : "hover:bg-stone-50 border-l-transparent"
               )}
             >
               <div className={cn(
-                "w-12 h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border",
+                "w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border",
                 isToday(new Date(b.startDate))
                   ? "bg-orange-500 border-orange-400"
                   : "bg-stone-50 border-stone-200"
@@ -265,7 +267,7 @@ function ListView({
                   {format(new Date(b.startDate), "MMM", { locale: idLocale })}
                 </span>
                 <span className={cn(
-                  "text-lg font-bold leading-tight",
+                  "text-base sm:text-lg font-bold leading-tight",
                   isToday(new Date(b.startDate)) ? "text-white" : "text-stone-800"
                 )}>
                   {new Date(b.startDate).getDate()}
@@ -279,7 +281,7 @@ function ListView({
                     <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100">✓</span>
                   )}
                   {b.hashtag && (
-                    <span className="text-[11px] text-stone-400 font-medium truncate max-w-32">{b.hashtag}</span>
+                    <span className="text-[11px] text-stone-400 font-medium truncate max-w-24 sm:max-w-32">{b.hashtag}</span>
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -295,7 +297,7 @@ function ListView({
                 </div>
                 {totalTasks > 0 && (
                   <div className="flex items-center gap-2 mt-1.5">
-                    <div className="progress-bar w-24">
+                    <div className="progress-bar w-20 sm:w-24">
                       <div className="progress-fill" style={{ width: `${(doneTasks / totalTasks) * 100}%` }} />
                     </div>
                     <span className="text-[11px] text-stone-400">{doneTasks}/{totalTasks} task</span>
@@ -303,11 +305,11 @@ function ListView({
                 )}
               </div>
 
-              <div className="text-right shrink-0 space-y-1">
+              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center sm:text-right shrink-0 gap-2 sm:gap-1 sm:space-y-1 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
                 <span className={cn("badge text-[10px]", getStatusColor(b.status))}>
                   {getStatusLabel(b.status)}
                 </span>
-                <div>
+                <div className="text-right">
                   <p className="text-sm font-bold text-stone-900">Rp {b.package.toLocaleString()}k</p>
                   <span className={cn("text-[11px] font-medium px-1.5 py-0.5 rounded-full", pay.color)}>
                     {pay.label}
@@ -318,7 +320,7 @@ function ListView({
                     "text-[11px] font-medium",
                     days === 0 ? "text-red-500" : days <= 3 ? "text-amber-500" : "text-stone-400"
                   )}>
-                    {days === 0 ? "Hari ini!" : `${days}h lagi`}
+                    {days === 0 ? "Hari ini!" : days === 1 ? "Besok" : `${days}h lagi`}
                   </p>
                 )}
               </div>
@@ -348,8 +350,8 @@ function CalendarView({
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
-        <h2 className="font-bold text-stone-900">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-stone-100 gap-3">
+        <h2 className="font-bold text-stone-900 text-sm">
           {format(calendarDate, "MMMM yyyy", { locale: idLocale })}
         </h2>
         <div className="flex items-center gap-2">
@@ -365,7 +367,7 @@ function CalendarView({
 
       <div className="grid grid-cols-7 bg-stone-50 border-b border-stone-100">
         {dayLabels.map((d) => (
-          <div key={d} className="text-center py-2 text-xs font-semibold text-stone-400 uppercase tracking-wider">
+          <div key={d} className="text-center py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-stone-400 uppercase tracking-wider">
             {d}
           </div>
         ))}

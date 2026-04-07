@@ -2,6 +2,7 @@
 // src/components/layout/Header.tsx
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { signOut } from "@/lib/auth-client";
 import { LogOut, User, ChevronDown, Bell } from "lucide-react";
 import toast from "react-hot-toast";
@@ -30,19 +31,20 @@ export default function Header({ user }: HeaderProps) {
 
   return (
     <header
-      className="bg-white border-b border-stone-200 flex items-center justify-between px-6 shrink-0"
+      className="bg-white border-b border-stone-200 flex items-center justify-between px-4 md:px-6 shrink-0"
       style={{ height: "var(--header-h)" }}
     >
       <div className="flex items-center gap-3">
         {/* Mobile brand */}
         <div className="flex items-center gap-2 md:hidden">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, #F97316 0%, #EA580C 100%)" }}
-          >
-            <span className="text-white text-xs font-bold">W</span>
-          </div>
-          <span className="font-semibold text-stone-900 text-sm">WCC Oranye</span>
+          <Image
+            src="/logo.webp"
+            alt="WCC"
+            width={120}
+            height={48}
+            className="w-auto h-10 object-contain shrink-0"
+          />
+          <span className="font-semibold text-stone-900 text-sm truncate">WCC Oranye</span>
         </div>
       </div>
 

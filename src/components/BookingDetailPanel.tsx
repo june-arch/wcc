@@ -203,15 +203,15 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
 
   return (
     <div
-      className="card overflow-hidden flex flex-col"
-      style={{ maxHeight: "calc(100vh - 160px)", position: "sticky", top: 0 }}
+      className="card overflow-hidden flex flex-col h-full lg:h-auto"
+      style={{ maxHeight: "calc(100vh - 140px)", position: "sticky", top: 0 }}
     >
       {/* Header */}
-      <div className="px-4 py-4 border-b border-stone-100 shrink-0">
+      <div className="px-3 sm:px-4 py-3 sm:py-4 border-b border-stone-100 shrink-0">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-stone-900 text-base leading-tight truncate">
+              <h3 className="font-bold text-stone-900 text-sm sm:text-base leading-tight truncate">
                 {booking.clientName}
               </h3>
               {booking.isConfirmed && (
@@ -299,7 +299,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
             {/* Status picker */}
             <div>
               <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">Status</p>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                 {(["PENDING", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"] as const).map((s) => (
                   <button
                     key={s}
