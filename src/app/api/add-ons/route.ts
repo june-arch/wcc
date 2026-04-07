@@ -1,43 +1,44 @@
-// src/app/api/tasks/[taskId]/route.ts
+// src/app/api/add-ons/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ taskId: string }> }
-) {
+// GET - List all add-ons
+export async function GET() {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { taskId } = await params;
-    const body = await req.json();
-
-    const task = await prisma.task.update({
-      where: { id: taskId },
-      data: body,
+    const addOns = await prisma.addOn.findMany({
+      orderBy: [{ createdAt: "desc" }],
     });
 
-    return NextResponse.json(task);
+    return NextResponse.json(addOns);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ taskId: string }> }
-) {
+// POST - Create new add-on
+export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { taskId } = await params;
-    await prisma.task.delete({ where: { id: taskId } });
-    return NextResponse.json({ success: true });
+    const body = await req.json();
+    
+    const addOn = await prisma.addOn.create({
+      data: {
+        name: body.name,
+        price: body.price,
+        description: body.description || null,
+        isActive: body.isActive ?? true,
+      },
+    });
+
+    return NextResponse.json(addOn, { status: 201 });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

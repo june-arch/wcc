@@ -2,11 +2,11 @@
 // src/components/BookingDetailPanel.tsx
 import { useState } from "react";
 import {
-  X, MapPin, Calendar, Tag, CreditCard, CheckSquare,
-  Plus, Trash2, Circle, Clock, CheckCircle2, Loader2,
+  X, MapPin, Calendar, Tag, CreditCard,
+  Plus, Trash2, Loader2, ArrowLeft, Pencil,
 } from "lucide-react";
 import { cn, formatDate, getStatusColor, getStatusLabel, getPaymentStatus } from "@/lib/utils";
-import type { BookingWithRelations, Task, Payment } from "@/types";
+import type { BookingWithRelations, Payment } from "@/types";
 import toast from "react-hot-toast";
 
 const EVENT_COLORS: Record<string, string> = {
@@ -17,38 +17,21 @@ const EVENT_COLORS: Record<string, string> = {
   LAINNYA:   "bg-stone-100 text-stone-600 border-stone-200",
 };
 
-const TASK_STATUS_CYCLE: Record<string, string> = {
-  TODO: "IN_PROGRESS",
-  IN_PROGRESS: "DONE",
-  DONE: "TODO",
-};
-
-const TASK_STATUS_ICONS = {
-  TODO: Circle,
-  IN_PROGRESS: Clock,
-  DONE: CheckCircle2,
-};
-
 interface Props {
   booking: BookingWithRelations;
   onClose: () => void;
-  /** Patch the booking in parent state immediately (optimistic) */
   onPatch: (id: string, patch: Partial<BookingWithRelations>) => void;
 }
 
 export default function BookingDetailPanel({ booking, onClose, onPatch }: Props) {
-  const [tab, setTab] = useState<"info" | "tasks" | "payment">("info");
-  const [newTask, setNewTask] = useState("");
+  const [tab, setTab] = useState<"info" | "payment">("info");
   const [newPayment, setNewPayment] = useState("");
-  const [addingTask, setAddingTask] = useState(false);
   const [addingPayment, setAddingPayment] = useState(false);
-  const [loadingTaskId, setLoadingTaskId] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const sisa = booking.package - booking.paid;
   const pay = getPaymentStatus(booking.paid, booking.package);
   const progress = Math.min(Math.round((booking.paid / booking.package) * 100), 100);
-  const doneTasks = booking.tasks.filter((t) => t.status === "DONE").length;
 
   // ─── Status ────────────────────────────────────────────────────────────────
   const handleUpdateStatus = async (status: string) => {
@@ -70,88 +53,6 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
       toast.error("Gagal update status");
     } finally {
       setUpdatingStatus(false);
-    }
-  };
-
-  // ─── Tasks ─────────────────────────────────────────────────────────────────
-  const handleAddTask = async () => {
-    if (!newTask.trim() || addingTask) return;
-    setAddingTask(true);
-    // Optimistic temp task
-    const tempId = `temp-${Date.now()}`;
-    const tempTask: Task = {
-      id: tempId,
-      bookingId: booking.id,
-      title: newTask.trim(),
-      description: null,
-      dueDate: null,
-      status: "TODO",
-      priority: "MEDIUM",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    onPatch(booking.id, { tasks: [...booking.tasks, tempTask] });
-    setNewTask("");
-    try {
-      const res = await fetch(`/api/bookings/${booking.id}/tasks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: tempTask.title, priority: "MEDIUM" }),
-      });
-      if (!res.ok) throw new Error();
-      const saved: Task = await res.json();
-      // Replace temp with real
-      onPatch(booking.id, {
-        tasks: booking.tasks.filter((t) => t.id !== tempId).concat(saved),
-      });
-      toast.success("Task ditambahkan");
-    } catch {
-      // Rollback
-      onPatch(booking.id, { tasks: booking.tasks.filter((t) => t.id !== tempId) });
-      toast.error("Gagal menambah task");
-    } finally {
-      setAddingTask(false);
-    }
-  };
-
-  const handleToggleTask = async (task: Task) => {
-    if (loadingTaskId) return;
-    const nextStatus = TASK_STATUS_CYCLE[task.status] ?? "TODO";
-    setLoadingTaskId(task.id);
-    // Optimistic
-    onPatch(booking.id, {
-      tasks: booking.tasks.map((t) => t.id === task.id ? { ...t, status: nextStatus } : t),
-    });
-    try {
-      const res = await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      if (!res.ok) throw new Error();
-    } catch {
-      // Rollback
-      onPatch(booking.id, {
-        tasks: booking.tasks.map((t) => t.id === task.id ? { ...t, status: task.status } : t),
-      });
-      toast.error("Gagal update task");
-    } finally {
-      setLoadingTaskId(null);
-    }
-  };
-
-  const handleDeleteTask = async (taskId: string) => {
-    if (!confirm("Hapus task ini?")) return;
-    // Optimistic
-    const prev = booking.tasks;
-    onPatch(booking.id, { tasks: booking.tasks.filter((t) => t.id !== taskId) });
-    try {
-      const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
-      toast.success("Task dihapus");
-    } catch {
-      onPatch(booking.id, { tasks: prev });
-      toast.error("Gagal hapus task");
     }
   };
 
@@ -208,6 +109,15 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
     >
       {/* Header */}
       <div className="px-3 sm:px-4 py-3 sm:py-4 border-b border-stone-100 shrink-0">
+        {/* Mobile back button */}
+        <button 
+          onClick={onClose} 
+          className="lg:hidden flex items-center gap-1 text-stone-500 hover:text-stone-700 text-sm font-medium mb-2 -ml-1"
+        >
+          <ArrowLeft size={16} />
+          Kembali ke list
+        </button>
+        
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
@@ -222,9 +132,19 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
               <p className="text-xs text-stone-400 mt-0.5 font-medium">{booking.hashtag}</p>
             )}
           </div>
-          <button onClick={onClose} className="btn btn-ghost w-7 h-7 p-0 justify-center shrink-0">
-            <X size={14} />
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Edit button */}
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('edit-booking', { detail: booking }))}
+              className="btn btn-ghost w-8 h-8 p-0 justify-center text-stone-400 hover:text-orange-600"
+              title="Edit booking"
+            >
+              <Pencil size={14} />
+            </button>
+            <button onClick={onClose} className="btn btn-ghost w-7 h-7 p-0 justify-center shrink-0 hidden lg:flex">
+              <X size={14} />
+            </button>
+          </div>
         </div>
         <div className="flex gap-1 mt-2 flex-wrap">
           {booking.eventType.map((et) => (
@@ -237,7 +157,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
 
       {/* Tabs */}
       <div className="flex border-b border-stone-100 shrink-0">
-        {(["info", "tasks", "payment"] as const).map((t) => (
+        {(["info", "payment"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -248,11 +168,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
                 : "text-stone-400 hover:text-stone-600"
             )}
           >
-            {t === "tasks"
-              ? `Tasks (${doneTasks}/${booking.tasks.length})`
-              : t === "payment"
-              ? "Bayar"
-              : "Info"}
+            {t === "payment" ? "Bayar" : "Info"}
           </button>
         ))}
       </div>
@@ -317,104 +233,6 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
                 ))}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* ── TASKS TAB ─────────────────────────────────────────────────────── */}
-        {tab === "tasks" && (
-          <div className="p-4 space-y-3">
-            <div className="flex gap-2">
-              <input
-                className="input-base text-sm py-1.5 flex-1"
-                placeholder="Tambah task baru... (Enter)"
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-              />
-              <button
-                onClick={handleAddTask}
-                disabled={!newTask.trim() || addingTask}
-                className="btn btn-primary px-3 py-1.5 shrink-0"
-              >
-                {addingTask
-                  ? <Loader2 size={14} className="animate-spin" />
-                  : <Plus size={14} />
-                }
-              </button>
-            </div>
-
-            {booking.tasks.length === 0 ? (
-              <div className="py-8 text-center text-stone-400 text-sm">
-                <CheckSquare size={24} className="mx-auto mb-2 text-stone-300" />
-                Belum ada task
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {booking.tasks.map((task) => {
-                  const Icon = TASK_STATUS_ICONS[task.status as keyof typeof TASK_STATUS_ICONS] ?? Circle;
-                  const isLoading = loadingTaskId === task.id;
-                  const isTemp = task.id.startsWith("temp-");
-
-                  return (
-                    <div
-                      key={task.id}
-                      className={cn(
-                        "flex items-center gap-2.5 p-2.5 rounded-lg group border transition-all",
-                        task.status === "DONE"
-                          ? "bg-stone-50 border-stone-100 opacity-60"
-                          : "bg-white border-stone-200 hover:border-stone-300",
-                        isTemp && "opacity-60"
-                      )}
-                    >
-                      <button
-                        onClick={() => !isTemp && handleToggleTask(task)}
-                        disabled={isLoading || isTemp}
-                        className={cn(
-                          "shrink-0 transition-colors",
-                          task.status === "DONE"
-                            ? "text-emerald-500"
-                            : task.status === "IN_PROGRESS"
-                            ? "text-blue-500"
-                            : "text-stone-300 hover:text-stone-500"
-                        )}
-                      >
-                        {isLoading
-                          ? <Loader2 size={16} className="animate-spin" />
-                          : <Icon size={16} />
-                        }
-                      </button>
-
-                      <span className={cn(
-                        "flex-1 text-sm min-w-0 truncate",
-                        task.status === "DONE" ? "line-through text-stone-400" : "text-stone-800"
-                      )}>
-                        {task.title}
-                      </span>
-
-                      <span className={cn(
-                        "text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
-                        task.priority === "HIGH"
-                          ? "bg-red-50 text-red-600"
-                          : task.priority === "MEDIUM"
-                          ? "bg-amber-50 text-amber-600"
-                          : "bg-stone-100 text-stone-500"
-                      )}>
-                        {task.priority === "HIGH" ? "Tinggi" : task.priority === "MEDIUM" ? "Sedang" : "Rendah"}
-                      </span>
-
-                      {!isTemp && (
-                        <button
-                          onClick={() => handleDeleteTask(task.id)}
-                          className="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-400 transition-all shrink-0"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         )}
 

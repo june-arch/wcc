@@ -15,21 +15,9 @@ export type BookingWithRelations = {
   isConfirmed: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
-  tasks: Task[];
   payments: Payment[];
+  bookingAddOns?: BookingAddOn[];
   createdBy?: { name: string; email: string } | null;
-};
-
-export type Task = {
-  id: string;
-  bookingId: string;
-  title: string;
-  description: string | null;
-  dueDate: Date | string | null;
-  status: string;
-  priority: string;
-  createdAt: Date | string;
-  updatedAt: Date | string;
 };
 
 export type Payment = {
@@ -49,3 +37,33 @@ export type CalendarDay = {
 
 export type ViewMode = "list" | "calendar";
 export type FilterStatus = "ALL" | "PENDING" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+
+export type PricePackage = {
+  id: string;
+  name: string;
+  price: number;
+  eventTypes: string[];
+  description: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
+export type AddOn = {
+  id: string;
+  name: string;
+  price: number;
+  description: string | null;
+  isActive: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
+export type BookingAddOn = {
+  id: string;
+  bookingId: string;
+  addOnId: string;
+  price: number;
+  addOn: AddOn;
+};

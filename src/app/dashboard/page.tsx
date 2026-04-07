@@ -14,19 +14,13 @@ export default async function DashboardPage() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  const [allBookings, monthBookings, pendingTasks] = await Promise.all([
+  const [allBookings, monthBookings] = await Promise.all([
     prisma.booking.findMany({
-      include: { tasks: true, payments: true },
+      include: { payments: true },
       orderBy: { startDate: "asc" },
     }),
     prisma.booking.findMany({
       where: { startDate: { gte: startOfMonth, lte: endOfMonth } },
-    }),
-    prisma.task.findMany({
-      where: { status: { not: "DONE" } },
-      include: { booking: { select: { clientName: true, startDate: true } } },
-      orderBy: [{ priority: "desc" }, { dueDate: "asc" }],
-      take: 10,
     }),
   ]);
 
@@ -48,7 +42,6 @@ export default async function DashboardPage() {
         pendingCount: allBookings.filter((b) => b.status === "PENDING").length,
       }}
       upcomingBookings={upcomingBookings}
-      pendingTasks={pendingTasks}
     />
   );
 }

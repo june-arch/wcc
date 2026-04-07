@@ -7,7 +7,6 @@ export const revalidate = 0;
 export default async function BookingsPage() {
   const bookings = await prisma.booking.findMany({
     include: {
-      tasks: { orderBy: { createdAt: "asc" } },
       payments: { orderBy: { paidAt: "desc" } },
       createdBy: { select: { name: true, email: true } },
     },

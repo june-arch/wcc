@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   CalendarDays,
   Wallet,
-  CheckSquare,
+  Tag,
   Settings,
 } from "lucide-react";
 
@@ -15,7 +15,7 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/bookings", label: "Booking", icon: CalendarDays },
   { href: "/dashboard/finance", label: "Keuangan", icon: Wallet },
-  { href: "/dashboard/tasks", label: "Tasks", icon: CheckSquare },
+  { href: "/dashboard/price-list", label: "Harga", icon: Tag },
   { href: "/dashboard/settings", label: "Setting", icon: Settings },
 ];
 

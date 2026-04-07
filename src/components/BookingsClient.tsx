@@ -1,14 +1,16 @@
 "use client";
 // src/components/BookingsClient.tsx
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   LayoutList, CalendarDays, Plus, Search,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Pencil, Trash2,
 } from "lucide-react";
 import { cn, formatDate, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil } from "@/lib/utils";
 import type { BookingWithRelations, ViewMode, FilterStatus } from "@/types";
 import BookingModal from "./BookingModal";
+import EditBookingModal from "./EditBookingModal";
 import BookingDetailPanel from "./BookingDetailPanel";
+import ResponsiveConfirm from "./ui/ResponsiveConfirm";
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isToday, format, addMonths, subMonths
@@ -35,6 +37,18 @@ export default function BookingsClient({ initialBookings }: Props) {
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedBooking, setSelectedBooking] = useState<BookingWithRelations | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; bookingId: string | null }>({ isOpen: false, bookingId: null });
+
+  // Listen for edit event from detail panel
+  useEffect(() => {
+    const handleEdit = (e: CustomEvent<BookingWithRelations>) => {
+      setSelectedBooking(e.detail);
+      setShowEditModal(true);
+    };
+    window.addEventListener('edit-booking', handleEdit as EventListener);
+    return () => window.removeEventListener('edit-booking', handleEdit as EventListener);
+  }, []);
 
   // ─── Filtered list ───────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -75,6 +89,25 @@ export default function BookingsClient({ initialBookings }: Props) {
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
     setSelectedBooking((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
   }, []);
+
+  const handleUpdate = useCallback((updated: BookingWithRelations) => {
+    setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+    setSelectedBooking(updated);
+    setShowEditModal(false);
+  }, []);
+
+  const handleDelete = useCallback(async () => {
+    if (!deleteConfirm.bookingId) return;
+    try {
+      const res = await fetch(`/api/bookings/${deleteConfirm.bookingId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setBookings((prev) => prev.filter((b) => b.id !== deleteConfirm.bookingId));
+      if (selectedBooking?.id === deleteConfirm.bookingId) setSelectedBooking(null);
+      setDeleteConfirm({ isOpen: false, bookingId: null });
+    } catch {
+      alert("Gagal menghapus booking");
+    }
+  }, [deleteConfirm.bookingId, selectedBooking]);
 
   // Full server refresh — used after add booking (need fresh IDs/relations)
   const refreshAll = useCallback(async () => {
@@ -171,6 +204,8 @@ export default function BookingsClient({ initialBookings }: Props) {
               bookings={filtered}
               selectedId={selectedBooking?.id}
               onSelect={setSelectedBooking}
+              onEdit={(b) => { setSelectedBooking(b); setShowEditModal(true); }}
+              onDelete={(id) => setDeleteConfirm({ isOpen: true, bookingId: id })}
               EVENT_TYPE_COLORS={EVENT_TYPE_COLORS}
             />
           ) : (
@@ -210,17 +245,39 @@ export default function BookingsClient({ initialBookings }: Props) {
           }}
         />
       )}
+
+      {showEditModal && selectedBooking && (
+        <EditBookingModal
+          booking={selectedBooking}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={handleUpdate}
+        />
+      )}
+
+      {/* Delete Confirmation */}
+      <ResponsiveConfirm
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, bookingId: null })}
+        onConfirm={handleDelete}
+        title="Hapus Booking?"
+        message="Yakin ingin menghapus booking ini? Semua data terkait akan hilang dan tidak bisa dikembalikan."
+        confirmText="Ya, Hapus"
+        cancelText="Batal"
+        variant="danger"
+      />
     </div>
   );
 }
 
 /* ─── List View ──────────────────────────────────────────────────────────────── */
 function ListView({
-  bookings, selectedId, onSelect, EVENT_TYPE_COLORS,
+  bookings, selectedId, onSelect, onEdit, onDelete, EVENT_TYPE_COLORS,
 }: {
   bookings: BookingWithRelations[];
   selectedId?: string;
   onSelect: (b: BookingWithRelations) => void;
+  onEdit: (b: BookingWithRelations) => void;
+  onDelete: (id: string) => void;
   EVENT_TYPE_COLORS: Record<string, string>;
 }) {
   if (bookings.length === 0) {
@@ -239,42 +296,43 @@ function ListView({
         {bookings.map((b) => {
           const days = getDaysUntil(b.startDate);
           const pay = getPaymentStatus(b.paid, b.package);
-          const doneTasks = b.tasks.filter((t) => t.status === "DONE").length;
-          const totalTasks = b.tasks.length;
           const isSelected = b.id === selectedId;
 
           return (
-            <button
+            <div
               key={b.id}
-              onClick={() => onSelect(b)}
               className={cn(
-                "w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors border-l-2",
+                "w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors border-l-2 group",
                 isSelected
                   ? "bg-orange-50 border-l-orange-400"
                   : "hover:bg-stone-50 border-l-transparent"
               )}
             >
-              <div className={cn(
-                "w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border",
-                isToday(new Date(b.startDate))
-                  ? "bg-orange-500 border-orange-400"
-                  : "bg-stone-50 border-stone-200"
-              )}>
-                <span className={cn(
-                  "text-[10px] font-bold uppercase leading-none",
-                  isToday(new Date(b.startDate)) ? "text-orange-100" : "text-stone-400"
+              {/* Date block */}
+              <button onClick={() => onSelect(b)} className="shrink-0">
+                <div className={cn(
+                  "w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border",
+                  isToday(new Date(b.startDate))
+                    ? "bg-orange-500 border-orange-400"
+                    : "bg-stone-50 border-stone-200"
                 )}>
-                  {format(new Date(b.startDate), "MMM", { locale: idLocale })}
-                </span>
-                <span className={cn(
-                  "text-base sm:text-lg font-bold leading-tight",
-                  isToday(new Date(b.startDate)) ? "text-white" : "text-stone-800"
-                )}>
-                  {new Date(b.startDate).getDate()}
-                </span>
-              </div>
+                  <span className={cn(
+                    "text-[10px] font-bold uppercase leading-none",
+                    isToday(new Date(b.startDate)) ? "text-orange-100" : "text-stone-400"
+                  )}>
+                    {format(new Date(b.startDate), "MMM", { locale: idLocale })}
+                  </span>
+                  <span className={cn(
+                    "text-base sm:text-lg font-bold leading-tight",
+                    isToday(new Date(b.startDate)) ? "text-white" : "text-stone-800"
+                  )}>
+                    {new Date(b.startDate).getDate()}
+                  </span>
+                </div>
+              </button>
 
-              <div className="flex-1 min-w-0">
+              {/* Main content - clickable to select */}
+              <button onClick={() => onSelect(b)} className="flex-1 min-w-0 text-left">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-stone-900 text-sm">{b.clientName}</span>
                   {b.isConfirmed && (
@@ -295,20 +353,32 @@ function ListView({
                   ))}
                   {b.location && <span className="text-xs text-stone-400">📍 {b.location}</span>}
                 </div>
-                {totalTasks > 0 && (
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <div className="progress-bar w-20 sm:w-24">
-                      <div className="progress-fill" style={{ width: `${(doneTasks / totalTasks) * 100}%` }} />
-                    </div>
-                    <span className="text-[11px] text-stone-400">{doneTasks}/{totalTasks} task</span>
-                  </div>
-                )}
-              </div>
+              </button>
 
+              {/* Right side - status, price, actions */}
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center sm:text-right shrink-0 gap-2 sm:gap-1 sm:space-y-1 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
-                <span className={cn("badge text-[10px]", getStatusColor(b.status))}>
-                  {getStatusLabel(b.status)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={cn("badge text-[10px]", getStatusColor(b.status))}>
+                    {getStatusLabel(b.status)}
+                  </span>
+                  {/* Edit/Delete buttons - always visible on mobile, hover on desktop */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEdit(b); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete(b.id); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      title="Hapus"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
                 <div className="text-right">
                   <p className="text-sm font-bold text-stone-900">Rp {b.package.toLocaleString()}k</p>
                   <span className={cn("text-[11px] font-medium px-1.5 py-0.5 rounded-full", pay.color)}>
@@ -324,7 +394,7 @@ function ListView({
                   </p>
                 )}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

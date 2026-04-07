@@ -1,9 +1,10 @@
-// src/app/api/bookings/[id]/route.ts
+// src/app/api/add-ons/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
+// GET - Get single add-on
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -13,27 +14,19 @@ export async function GET(
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const booking = await prisma.booking.findUnique({
+    const addOn = await prisma.addOn.findUnique({
       where: { id },
-      include: {
-        payments: { orderBy: { paidAt: "desc" } },
-        bookingAddOns: {
-          include: {
-            addOn: true,
-          },
-        },
-        createdBy: { select: { name: true, email: true } },
-      },
     });
 
-    if (!booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(booking);
+    if (!addOn) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(addOn);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
+// PATCH - Update add-on
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -44,51 +37,25 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { addOns, ...bookingData } = body;
 
-    const updateData: Record<string, unknown> = { ...bookingData };
-    if (body.startDate) updateData.startDate = new Date(body.startDate);
-    if (body.endDate) updateData.endDate = new Date(body.endDate);
-
-    // Handle add-ons update if provided
-    if (addOns !== undefined) {
-      // Delete existing add-ons
-      await prisma.bookingAddOn.deleteMany({
-        where: { bookingId: id },
-      });
-      
-      // Create new add-ons
-      if (addOns.length > 0) {
-        await prisma.bookingAddOn.createMany({
-          data: addOns.map((a: { addOnId: string; price: number }) => ({
-            bookingId: id,
-            addOnId: a.addOnId,
-            price: a.price,
-          })),
-        });
-      }
-    }
-
-    const booking = await prisma.booking.update({
+    const addOn = await prisma.addOn.update({
       where: { id },
-      data: updateData,
-      include: {
-        payments: true,
-        bookingAddOns: {
-          include: {
-            addOn: true,
-          },
-        },
+      data: {
+        name: body.name,
+        price: body.price,
+        description: body.description,
+        isActive: body.isActive,
       },
     });
 
-    return NextResponse.json(booking);
+    return NextResponse.json(addOn);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
+// DELETE - Delete add-on
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -98,7 +65,7 @@ export async function DELETE(
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    await prisma.booking.delete({ where: { id } });
+    await prisma.addOn.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

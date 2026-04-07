@@ -34,8 +34,12 @@ export async function GET(req: NextRequest) {
     const bookings = await prisma.booking.findMany({
       where,
       include: {
-        tasks: { orderBy: { createdAt: "asc" } },
         payments: { orderBy: { paidAt: "desc" } },
+        bookingAddOns: {
+          include: {
+            addOn: true,
+          },
+        },
         createdBy: { select: { name: true, email: true } },
       },
       orderBy: { startDate: "asc" },
@@ -54,16 +58,41 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
+    const { addOns, ...bookingData } = body;
+    
     const booking = await prisma.booking.create({
       data: {
-        ...body,
-        startDate: new Date(body.startDate),
-        endDate: body.endDate ? new Date(body.endDate) : null,
+        clientName: bookingData.clientName,
+        hashtag: bookingData.hashtag,
+        package: bookingData.package,
+        dp: bookingData.dp,
+        paid: bookingData.paid,
+        location: bookingData.location,
+        eventType: bookingData.eventType,
+        startDate: new Date(bookingData.startDate),
+        endDate: bookingData.endDate ? new Date(bookingData.endDate) : null,
+        status: bookingData.status,
+        isConfirmed: bookingData.isConfirmed,
+        notes: bookingData.notes,
+        pricePackageId: bookingData.pricePackageId,
         createdById: session.user.id,
+        // Create add-ons if provided
+        ...(addOns && addOns.length > 0 && {
+          bookingAddOns: {
+            create: addOns.map((a: { addOnId: string; price: number }) => ({
+              addOnId: a.addOnId,
+              price: a.price,
+            })),
+          },
+        }),
       },
       include: {
-        tasks: true,
         payments: true,
+        bookingAddOns: {
+          include: {
+            addOn: true,
+          },
+        },
       },
     });
 

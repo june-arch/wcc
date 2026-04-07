@@ -28,16 +28,9 @@ interface Props {
     location: string | null;
     eventType: string[];
   }>;
-  pendingTasks: Array<{
-    id: string;
-    title: string;
-    priority: string;
-    status: string;
-    booking: { clientName: string; startDate: Date | string };
-  }>;
 }
 
-export default function DashboardClient({ stats, upcomingBookings, pendingTasks }: Props) {
+export default function DashboardClient({ stats, upcomingBookings }: Props) {
   const statCards = [
     {
       label: "Total Booking",

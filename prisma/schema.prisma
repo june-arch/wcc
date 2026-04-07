@@ -72,42 +72,69 @@ model Verification {
 // ─── App models ───────────────────────────────────────────────────────────────
 
 model Booking {
-  id          String        @id @default(cuid())
-  clientName  String
-  hashtag     String?
-  package     Int           // price in thousands (e.g. 800 = 800k)
-  dp          Int           @default(0) // down payment
-  paid        Int           @default(0) // total paid
-  location    String?
-  eventType   EventType[]
-  startDate   DateTime
-  endDate     DateTime?
-  status      BookingStatus @default(PENDING)
-  notes       String?
-  isConfirmed Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  createdById String?
-  createdBy   User?         @relation("CreatedBy", fields: [createdById], references: [id])
-  tasks       Task[]
-  payments    Payment[]
+  id            String        @id @default(cuid())
+  clientName    String
+  hashtag       String?
+  package       Int           // price in thousands (e.g. 800 = 800k)
+  dp            Int           @default(0) // down payment
+  paid          Int           @default(0) // total paid
+  location      String?
+  eventType     EventType[]
+  startDate     DateTime
+  endDate       DateTime?
+  status        BookingStatus @default(PENDING)
+  notes         String?
+  isConfirmed   Boolean       @default(false)
+  pricePackageId String?      // optional link to price package
+  pricePackage  PricePackage? @relation(fields: [pricePackageId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  createdById   String?
+  createdBy     User?         @relation("CreatedBy", fields: [createdById], references: [id])
+  payments      Payment[]
+  bookingAddOns BookingAddOn[]
 
   @@map("bookings")
 }
 
-model Task {
-  id          String     @id @default(cuid())
-  bookingId   String
-  booking     Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  title       String
+model PricePackage {
+  id          String    @id @default(cuid())
+  name        String    // e.g. "Akad & Resepsi (Hari Sama)"
+  price       Int       // in thousands
+  eventTypes  EventType[] // which event types this covers
   description String?
-  dueDate     DateTime?
-  status      TaskStatus @default(TODO)
-  priority    Priority   @default(MEDIUM)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
 
-  @@map("tasks")
+  @@map("price_packages")
+}
+
+model AddOn {
+  id            String         @id @default(cuid())
+  name          String         // e.g. "Stand by dari awal - akhir acara"
+  price         Int            // in thousands, 0 if included
+  description   String?
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bookingAddOns BookingAddOn[]
+
+  @@map("add_ons")
+}
+
+model BookingAddOn {
+  id            String    @id @default(cuid())
+  bookingId     String
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  addOnId       String
+  addOn         AddOn     @relation(fields: [addOnId], references: [id], onDelete: Cascade)
+  price         Int       // snapshot price at time of booking
+  createdAt     DateTime  @default(now())
+
+  @@map("booking_add_ons")
 }
 
 model Payment {
@@ -138,14 +165,3 @@ enum BookingStatus {
   CANCELLED
 }
 
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  DONE
-}
-
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-}
