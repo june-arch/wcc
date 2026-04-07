@@ -1,0 +1,167 @@
+// prisma/seed.ts
+import { PrismaClient, EventType, BookingStatus } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Seed initial bookings from the PDF
+  const bookings = [
+    {
+      clientName: "Jannah & Sahal",
+      hashtag: "#SAHuntilJANNAH",
+      package: 800,
+      dp: 800,
+      paid: 800,
+      location: "Sungai Baung",
+      eventType: [EventType.PENGAJIAN, EventType.AKAD, EventType.RESEPSI],
+      startDate: new Date("2026-04-05"),
+      endDate: new Date("2026-04-06"),
+      status: BookingStatus.CONFIRMED,
+      isConfirmed: true,
+      notes: "Lunas",
+    },
+    {
+      clientName: "Hasni & Romadhon",
+      hashtag: "#ROMAnticmomentwithHasni",
+      package: 800,
+      dp: 800,
+      paid: 800,
+      location: "Sungai Baung",
+      eventType: [EventType.PENGAJIAN, EventType.AKAD, EventType.RESEPSI],
+      startDate: new Date("2026-04-19"),
+      endDate: new Date("2026-04-20"),
+      status: BookingStatus.CONFIRMED,
+      isConfirmed: false,
+      notes: "Lunas",
+    },
+    {
+      clientName: "Wardatul Jannah & Alvin",
+      hashtag: "#WarLoVinDay",
+      package: 1100,
+      dp: 300,
+      paid: 300,
+      location: "Karmen",
+      eventType: [EventType.AKAD, EventType.RESEPSI],
+      startDate: new Date("2026-04-03"),
+      endDate: new Date("2026-04-04"),
+      status: BookingStatus.CONFIRMED,
+      isConfirmed: true,
+      notes: "Sisa 800k",
+    },
+    {
+      clientName: "Aini & Ziska",
+      hashtag: "#DicintAiniZiska",
+      package: 650,
+      dp: 300,
+      paid: 300,
+      location: "Danau Serdang Pauh",
+      eventType: [EventType.RESEPSI],
+      startDate: new Date("2026-06-03"),
+      endDate: new Date("2026-06-03"),
+      status: BookingStatus.PENDING,
+      isConfirmed: false,
+      notes: "Belum transport",
+    },
+    {
+      clientName: "Lia",
+      hashtag: null,
+      package: 1000,
+      dp: 300,
+      paid: 300,
+      location: "Panti",
+      eventType: [EventType.AKAD, EventType.RESEPSI],
+      startDate: new Date("2026-04-11"),
+      endDate: new Date("2026-04-12"),
+      status: BookingStatus.PENDING,
+      isConfirmed: false,
+      notes: null,
+    },
+    {
+      clientName: "Ima",
+      hashtag: null,
+      package: 900,
+      dp: 500,
+      paid: 500,
+      location: null,
+      eventType: [EventType.AKAD, EventType.RESEPSI],
+      startDate: new Date("2026-07-01"),
+      endDate: new Date("2026-07-01"),
+      status: BookingStatus.PENDING,
+      isConfirmed: false,
+      notes: "Sisa 400k",
+    },
+    {
+      clientName: "Diah & Habib",
+      hashtag: null,
+      package: 900,
+      dp: 200,
+      paid: 200,
+      location: null,
+      eventType: [EventType.AKAD, EventType.RESEPSI],
+      startDate: new Date("2026-04-30"),
+      endDate: new Date("2026-04-30"),
+      status: BookingStatus.PENDING,
+      isConfirmed: false,
+      notes: "1 hari. Sisa 700k",
+    },
+    {
+      clientName: "Aci",
+      hashtag: null,
+      package: 1000,
+      dp: 200,
+      paid: 200,
+      location: null,
+      eventType: [EventType.AKAD, EventType.RESEPSI],
+      startDate: new Date("2026-06-14"),
+      endDate: new Date("2026-06-15"),
+      status: BookingStatus.PENDING,
+      isConfirmed: false,
+      notes: "Sisa 800k",
+    },
+    {
+      clientName: "Tesi",
+      hashtag: null,
+      package: 200,
+      dp: 200,
+      paid: 200,
+      location: null,
+      eventType: [EventType.TAMAT_KAJI],
+      startDate: new Date("2026-04-26"),
+      endDate: new Date("2026-04-26"),
+      status: BookingStatus.PENDING,
+      isConfirmed: false,
+      notes: null,
+    },
+    {
+      clientName: "Ilmi",
+      hashtag: null,
+      package: 900,
+      dp: 0,
+      paid: 0,
+      location: "Sungai Baung",
+      eventType: [EventType.AKAD, EventType.RESEPSI],
+      startDate: new Date("2026-04-08"),
+      endDate: new Date("2026-04-09"),
+      status: BookingStatus.PENDING,
+      isConfirmed: false,
+      notes: null,
+    },
+  ];
+
+  for (const b of bookings) {
+    await prisma.booking.upsert({
+      where: { id: b.clientName.toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-seed" },
+      update: {},
+      create: {
+        id: b.clientName.toLowerCase().replace(/\s+/g, "-").slice(0, 20) + "-seed",
+        ...b,
+      },
+    });
+  }
+
+  console.log("✅ Seeded", bookings.length, "bookings");
+}
+
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());
