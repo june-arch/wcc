@@ -13,6 +13,8 @@ export type BookingWithRelations = {
   status: string;
   notes: string | null;
   isConfirmed: boolean;
+  transport: number;
+  discount: number;
   createdAt: Date | string;
   updatedAt: Date | string;
   payments: Payment[];

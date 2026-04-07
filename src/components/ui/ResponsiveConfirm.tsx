@@ -1,6 +1,6 @@
 "use client";
-// src/components/ui/ResponsiveConfirm.tsx
-import { AlertTriangle, X } from "lucide-react";
+// src/components/ui/ResponsiveConfirm.tsx - Drawer Style
+import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ResponsiveConfirmProps {
@@ -39,56 +39,43 @@ export default function ResponsiveConfirm({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-      style={{ background: "rgba(0,0,0,0.45)" }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      {/* Mobile: Drawer from bottom, Desktop: Modal */}
-      <div
-        className={cn(
-          "bg-white w-full overflow-hidden animate-slide-up",
-          "fixed inset-x-0 bottom-0 sm:static sm:inset-auto rounded-t-2xl sm:rounded-2xl",
-          "sm:max-w-md sm:max-h-[90vh]"
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-stone-100">
-          <div className="flex items-center gap-3">
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border", variantStyles[variant])}>
-              <AlertTriangle size={20} />
-            </div>
-            <div>
-              <h2 className="font-bold text-stone-900 text-base">{title}</h2>
-            </div>
+    <div className="fixed inset-0 z-50 bg-white">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-stone-100">
+        <button
+          onClick={onClose}
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors -ml-2"
+        >
+          <ArrowLeft size={20} className="text-stone-600" />
+        </button>
+        <div className="flex items-center gap-3 flex-1">
+          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center border", variantStyles[variant])}>
+            <AlertTriangle size={20} />
           </div>
+          <div>
+            <h2 className="font-bold text-stone-900 text-base">{title}</h2>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        <p className="text-stone-600 text-sm leading-relaxed">{message}</p>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-3 mt-6">
+          <button
+            onClick={onConfirm}
+            className={cn("w-full justify-center", buttonStyles[variant])}
+          >
+            {confirmText}
+          </button>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-stone-100 transition-colors"
+            className="btn btn-secondary w-full"
           >
-            <X size={20} className="text-stone-500" />
+            {cancelText}
           </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 sm:p-6">
-          <p className="text-stone-600 text-sm leading-relaxed">{message}</p>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 mt-6">
-            <button
-              onClick={onClose}
-              className="btn btn-secondary flex-1 order-2 sm:order-1"
-            >
-              {cancelText}
-            </button>
-            <button
-              onClick={onConfirm}
-              className={cn("flex-1 justify-center order-1 sm:order-2", buttonStyles[variant])}
-            >
-              {confirmText}
-            </button>
-          </div>
         </div>
       </div>
     </div>

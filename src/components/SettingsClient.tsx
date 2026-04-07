@@ -1,8 +1,10 @@
 "use client";
 // src/components/SettingsClient.tsx
 import { useState } from "react";
-import { User, Lock, Bell, Info, Camera } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { User, Lock, Bell, Info, Camera, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth-client";
 import toast from "react-hot-toast";
 
 interface Props {
@@ -10,8 +12,16 @@ interface Props {
 }
 
 export default function SettingsClient({ user }: Props) {
+  const router = useRouter();
   const [name, setName] = useState(user.name);
   const [saving, setSaving] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast.success("Berhasil keluar");
+    router.push("/login");
+    router.refresh();
+  };
 
   const handleSaveName = async () => {
     setSaving(true);
@@ -100,13 +110,15 @@ export default function SettingsClient({ user }: Props) {
         </div>
       </div>
 
-      {/* Danger zone */}
-      <div className="card p-4 sm:p-6 border border-red-100 bg-red-50/30">
-        <h2 className="font-semibold text-red-700 text-sm mb-3">Zona Bahaya</h2>
-        <p className="text-xs text-red-500 mb-4">
-          Tindakan di bawah ini bersifat permanen dan tidak dapat dibatalkan.
-        </p>
-        <button className="btn btn-danger text-xs px-4 w-full sm:w-auto">Hapus Semua Data Booking</button>
+      {/* Logout */}
+      <div className="card p-4 sm:p-6">
+        <button
+          onClick={handleSignOut}
+          className="btn btn-secondary text-sm px-4 w-full sm:w-auto flex items-center justify-center gap-2"
+        >
+          <LogOut size={14} />
+          Keluar
+        </button>
       </div>
     </div>
   );

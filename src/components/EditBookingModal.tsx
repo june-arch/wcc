@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader2, Package, Check, Sparkles, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ResponsiveModal from "./ui/ResponsiveModal";
+import { FormattedNumberInput } from "./ui/FormattedNumberInput";
 import type { BookingWithRelations, PricePackage, AddOn } from "@/types";
 import toast from "react-hot-toast";
 
@@ -38,6 +39,7 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
     eventType: booking.eventType,
     package: booking.package,
     paid: booking.paid,
+    discount: booking.discount ?? 0,
     isConfirmed: booking.isConfirmed,
     notes: booking.notes ?? "",
   });
@@ -50,9 +52,10 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
   const [selectedAddOns, setSelectedAddOns] = useState<AddOn[]>([]);
 
   // Calculate total price
-  const basePrice = selectedPackage?.price || 0;
+  const basePrice = selectedPackage?.price || form.package;
   const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
-  const totalPrice = basePrice + addOnsTotal;
+  const discount = form.discount || 0;
+  const totalPrice = Math.max(0, basePrice + addOnsTotal - discount);
 
   // Fetch price packages and add-ons
   useEffect(() => {
@@ -132,6 +135,7 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
           ...form,
           package: totalPrice, // Use calculated total price
           paid: Number(form.paid),
+          discount: form.discount || 0,
           pricePackageId: selectedPackage?.id || null,
           addOns: selectedAddOns.map((a) => ({ addOnId: a.id, price: a.price })),
         }),
@@ -255,10 +259,10 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
           </div>
         </div>
 
-        {/* Paket & Dibayar */}
+        {/* Paket, Dibayar & Diskon */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Total Paket (ribu)</label>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Total Paket (Rp)</label>
             {/* Package selector button */}
             {pricePackages.length > 0 && (
               <button
@@ -272,24 +276,40 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
                 </span>
               </button>
             )}
-            <input
-              type="number"
-              min="0"
-              className="input-base w-full bg-stone-50"
-              value={form.package}
-              disabled
-              title="Pilih paket dari tombol di atas"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">Rp</span>
+              <FormattedNumberInput
+                value={form.package}
+                onChange={() => {}} // disabled, controlled by package selector
+                placeholder="0"
+                min={0}
+                disabled
+              />
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Sudah Dibayar (ribu)</label>
-            <input
-              type="number"
-              min="0"
-              className="input-base w-full"
-              value={form.paid}
-              onChange={(e) => setForm({ ...form, paid: Number(e.target.value) })}
-            />
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Sudah Dibayar (Rp)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">Rp</span>
+              <FormattedNumberInput
+                value={form.paid}
+                onChange={(val: number) => setForm({ ...form, paid: val })}
+                placeholder="0"
+                min={0}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Diskon (Rp)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">-Rp</span>
+              <FormattedNumberInput
+                value={form.discount}
+                onChange={(val: number) => setForm({ ...form, discount: val })}
+                placeholder="0"
+                min={0}
+              />
+            </div>
           </div>
         </div>
 
@@ -304,7 +324,7 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-medium"
                 >
                   {addon.name}
-                  {addon.price > 0 && ` (+${addon.price}K)`}
+                  {addon.price > 0 && ` (+${addon.price.toLocaleString("id-ID")})`}
                   <button
                     type="button"
                     onClick={() => toggleAddOn(addon)}
@@ -334,19 +354,27 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
           {/* Total Price Breakdown */}
           <div className="p-3 rounded-lg bg-stone-50 border border-stone-200 space-y-1">
             <div className="flex justify-between text-sm">
-              <span className="text-stone-500">Paket {selectedPackage?.name || "-"}</span>
-              <span className="font-medium">Rp {basePrice.toLocaleString("id-ID")}K</span>
+              <span className="text-stone-500">
+                Paket {selectedPackage?.name || (form.package > 0 ? "(Custom)" : "-")}
+              </span>
+              <span className="font-medium">Rp {basePrice.toLocaleString("id-ID")}</span>
             </div>
             {selectedAddOns.map((addon) => (
               <div key={addon.id} className="flex justify-between text-sm">
                 <span className="text-stone-500">{addon.name}</span>
-                <span className="font-medium">+{addon.price}K</span>
+                <span className="font-medium">+{addon.price.toLocaleString("id-ID")}</span>
               </div>
             ))}
+            {discount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-stone-500">Diskon</span>
+                <span className="font-medium text-emerald-600">-{discount.toLocaleString("id-ID")}</span>
+              </div>
+            )}
             <div className="border-t border-stone-200 pt-1 mt-1">
               <div className="flex justify-between text-sm font-semibold">
                 <span className="text-stone-700">Total</span>
-                <span className="text-orange-600">Rp {totalPrice.toLocaleString("id-ID")}K</span>
+                <span className="text-orange-600">Rp {totalPrice.toLocaleString("id-ID")}</span>
               </div>
             </div>
           </div>
@@ -425,7 +453,7 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
                         {addon.name}
                       </h3>
                       <span className={cn("text-sm font-semibold", isSelected ? "text-orange-600" : "text-stone-600")}>
-                        {addon.price === 0 ? "Free" : `+${addon.price}K`}
+                        {addon.price === 0 ? "Free" : `+${addon.price.toLocaleString("id-ID")}`}
                       </span>
                     </div>
                     {addon.description && (
@@ -480,7 +508,7 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
                         {pkg.name}
                       </h3>
                       <p className={cn("text-lg font-bold mt-1", isSelected ? "text-orange-600" : "text-orange-600")}>
-                        Rp {pkg.price.toLocaleString("id-ID")}K
+                        Rp {pkg.price.toLocaleString("id-ID")}
                       </p>
                     </div>
                     <div className="flex gap-1">

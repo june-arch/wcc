@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Package, Sparkles, GripVertical } from "lucide-re
 import { cn } from "@/lib/utils";
 import ResponsiveModal from "./ui/ResponsiveModal";
 import ResponsiveConfirm from "./ui/ResponsiveConfirm";
+import { FormattedNumberInput } from "./ui/FormattedNumberInput";
 import type { PricePackage, AddOn } from "@/types";
 import toast from "react-hot-toast";
 
@@ -25,6 +26,9 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
   const [packages, setPackages] = useState<PricePackage[]>(initialPackages);
   const [addOns, setAddOns] = useState<AddOn[]>(initialAddOns);
   const [activeTab, setActiveTab] = useState<"packages" | "addons">("packages");
+  const [savingPackage, setSavingPackage] = useState(false);
+  const [savingAddOn, setSavingAddOn] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Package modal states
   const [showPackageModal, setShowPackageModal] = useState(false);
@@ -111,40 +115,69 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
     const data = {
       name: packageForm.name.trim(),
       price: parseInt(packageForm.price),
-      eventTypes: packageForm.eventTypes,
       description: packageForm.description.trim() || null,
+      eventTypes: packageForm.eventTypes,
       isActive: packageForm.isActive,
-      sortOrder: parseInt(packageForm.sortOrder) || 0,
     };
 
+    setSavingPackage(true);
+    
     try {
       if (editingPackage) {
+        // Optimistic update for edit
+        const originalPackages = [...packages];
+        const optimisticUpdate = { ...editingPackage, ...data };
+        setPackages((prev) => prev.map((p) => (p.id === editingPackage.id ? optimisticUpdate : p)));
+        
         const res = await fetch(`/api/price-packages/${editingPackage.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!res.ok) throw new Error();
+        
+        if (!res.ok) {
+          // Rollback on error
+          setPackages(originalPackages);
+          throw new Error();
+        }
+        
         const updated = await res.json();
-        setPackages((prev) =>
-          prev.map((p) => (p.id === updated.id ? updated : p)).sort((a, b) => a.sortOrder - b.sortOrder)
-        );
+        setPackages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
         toast.success("Paket diperbarui");
       } else {
+        // Optimistic update for create
+        const tempId = `temp-${Date.now()}`;
+        const optimisticPackage = { 
+          ...data, 
+          id: tempId, 
+          sortOrder: packages.length,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setPackages((prev) => [...prev, optimisticPackage]);
+        
         const res = await fetch("/api/price-packages", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!res.ok) throw new Error();
+        
+        if (!res.ok) {
+          // Rollback on error
+          setPackages((prev) => prev.filter((p) => p.id !== tempId));
+          throw new Error();
+        }
+        
         const created = await res.json();
-        setPackages((prev) => [...prev, created].sort((a, b) => a.sortOrder - b.sortOrder));
+        setPackages((prev) => prev.map((p) => (p.id === tempId ? created : p)));
         toast.success("Paket ditambahkan");
       }
       setShowPackageModal(false);
       resetPackageForm();
     } catch {
       toast.error("Gagal menyimpan paket");
+    } finally {
+      setSavingPackage(false);
     }
   };
 
@@ -161,53 +194,95 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
       isActive: addOnForm.isActive,
     };
 
+    setSavingAddOn(true);
+    
     try {
       if (editingAddOn) {
+        // Optimistic update for edit
+        const originalAddOns = [...addOns];
+        const optimisticUpdate = { ...editingAddOn, ...data };
+        setAddOns((prev) => prev.map((a) => (a.id === editingAddOn.id ? optimisticUpdate : a)));
+        
         const res = await fetch(`/api/add-ons/${editingAddOn.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!res.ok) throw new Error();
+        
+        if (!res.ok) {
+          // Rollback on error
+          setAddOns(originalAddOns);
+          throw new Error();
+        }
+        
         const updated = await res.json();
         setAddOns((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
         toast.success("Add-on diperbarui");
       } else {
+        // Optimistic update for create
+        const tempId = `temp-${Date.now()}`;
+        const optimisticAddOn = { 
+          ...data, 
+          id: tempId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        setAddOns((prev) => [...prev, optimisticAddOn]);
+        
         const res = await fetch("/api/add-ons", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
         });
-        if (!res.ok) throw new Error();
+        
+        if (!res.ok) {
+          // Rollback on error
+          setAddOns((prev) => prev.filter((a) => a.id !== tempId));
+          throw new Error();
+        }
+        
         const created = await res.json();
-        setAddOns((prev) => [...prev, created]);
+        setAddOns((prev) => prev.map((a) => (a.id === tempId ? created : a)));
         toast.success("Add-on ditambahkan");
       }
       setShowAddOnModal(false);
       resetAddOnForm();
     } catch {
       toast.error("Gagal menyimpan add-on");
+    } finally {
+      setSavingAddOn(false);
     }
   };
 
   const handleDelete = async () => {
+    const { type, id } = deleteConfirm;
+    const originalPackages = [...packages];
+    const originalAddOns = [...addOns];
+    
+    // Optimistic update
+    if (type === "package") {
+      setPackages((prev) => prev.filter((p) => p.id !== id));
+    } else {
+      setAddOns((prev) => prev.filter((a) => a.id !== id));
+    }
+    
+    setDeletingId(id);
+    setDeleteConfirm({ isOpen: false, type: "package", id: "", name: "" });
+    
     try {
-      const endpoint = deleteConfirm.type === "package" ? "price-packages" : "add-ons";
-      const res = await fetch(`/api/${endpoint}/${deleteConfirm.id}`, {
+      const endpoint = type === "package" ? "price-packages" : "add-ons";
+      const res = await fetch(`/api/${endpoint}/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error();
-
-      if (deleteConfirm.type === "package") {
-        setPackages((prev) => prev.filter((p) => p.id !== deleteConfirm.id));
-      } else {
-        setAddOns((prev) => prev.filter((a) => a.id !== deleteConfirm.id));
-      }
-      toast.success("Data dihapus");
+      toast.success(`${type === "package" ? "Paket" : "Add-on"} dihapus`);
     } catch {
+      // Rollback optimistic update
+      setPackages(originalPackages);
+      setAddOns(originalAddOns);
       toast.error("Gagal menghapus");
     } finally {
-      setDeleteConfirm({ isOpen: false, type: "package", id: "", name: "" });
+      setDeletingId(null);
     }
   };
 
@@ -306,9 +381,19 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
                           name: pkg.name,
                         })
                       }
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      disabled={deletingId === pkg.id}
+                      className={cn(
+                        "w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
+                        deletingId === pkg.id
+                          ? "text-stone-300 cursor-not-allowed"
+                          : "text-stone-400 hover:text-red-600 hover:bg-red-50"
+                      )}
                     >
-                      <Trash2 size={16} />
+                      {deletingId === pkg.id ? (
+                        <div className="w-4 h-4 border-2 border-stone-300 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 size={16} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -316,7 +401,7 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
                 <div className="mt-3">
                   <h3 className="font-bold text-stone-900">{pkg.name}</h3>
                   <p className="text-xl font-bold text-orange-600 mt-1">
-                    Rp {pkg.price.toLocaleString("id-ID")}K
+                    Rp {pkg.price.toLocaleString("id-ID")}
                   </p>
                 </div>
 
@@ -396,9 +481,19 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
                           name: addon.name,
                         })
                       }
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      disabled={deletingId === addon.id}
+                      className={cn(
+                        "w-8 h-8 flex items-center justify-center rounded-lg transition-colors",
+                        deletingId === addon.id
+                          ? "text-stone-300 cursor-not-allowed"
+                          : "text-stone-400 hover:text-red-600 hover:bg-red-50"
+                      )}
                     >
-                      <Trash2 size={16} />
+                      {deletingId === addon.id ? (
+                        <div className="w-4 h-4 border-2 border-stone-300 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 size={16} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -406,7 +501,7 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
                 <div className="mt-3">
                   <h3 className="font-bold text-stone-900">{addon.name}</h3>
                   <p className="text-lg font-bold text-orange-600 mt-1">
-                    Rp {addon.price.toLocaleString("id-ID")}K
+                    Rp {addon.price.toLocaleString("id-ID")}
                   </p>
                 </div>
 
@@ -459,18 +554,17 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-                Harga (ribu) <span className="text-red-400">*</span>
+                Harga (Rp) <span className="text-red-400">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">
                   Rp
                 </span>
-                <input
-                  type="number"
-                  className="input-base w-full pl-8"
-                  placeholder="750"
-                  value={packageForm.price}
-                  onChange={(e) => setPackageForm({ ...packageForm, price: e.target.value })}
+                <FormattedNumberInput
+                  value={parseInt(packageForm.price) || 0}
+                  onChange={(val: number) => setPackageForm({ ...packageForm, price: val.toString() })}
+                  placeholder="0"
+                  min={0}
                 />
               </div>
             </div>
@@ -553,9 +647,17 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
             </button>
             <button
               onClick={handleSavePackage}
+              disabled={savingPackage}
               className="btn btn-primary flex-1 justify-center order-1 sm:order-2"
             >
-              {editingPackage ? "Simpan Perubahan" : "Tambah Paket"}
+              {savingPackage ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Menyimpan...
+                </div>
+              ) : (
+                editingPackage ? "Simpan Perubahan" : "Tambah Paket"
+              )}
             </button>
           </div>
         </div>
@@ -586,18 +688,17 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
 
           <div>
             <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-              Harga (ribu)
+              Harga (Rp)
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">
                 Rp
               </span>
-              <input
-                type="number"
-                className="input-base w-full pl-8"
+              <FormattedNumberInput
+                value={parseInt(addOnForm.price) || 0}
+                onChange={(val: number) => setAddOnForm({ ...addOnForm, price: val.toString() })}
                 placeholder="0"
-                value={addOnForm.price}
-                onChange={(e) => setAddOnForm({ ...addOnForm, price: e.target.value })}
+                min={0}
               />
             </div>
             <p className="text-xs text-stone-400 mt-1">Isi 0 jika gratis</p>
@@ -645,9 +746,17 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
             </button>
             <button
               onClick={handleSaveAddOn}
+              disabled={savingAddOn}
               className="btn btn-primary flex-1 justify-center order-1 sm:order-2"
             >
-              {editingAddOn ? "Simpan Perubahan" : "Tambah Add-on"}
+              {savingAddOn ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Menyimpan...
+                </div>
+              ) : (
+                editingAddOn ? "Simpan Perubahan" : "Tambah Add-on"
+              )}
             </button>
           </div>
         </div>

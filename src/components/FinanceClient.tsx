@@ -40,14 +40,14 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
   const statCards = [
     {
       label: "Total Nilai Kontrak",
-      value: `Rp ${stats.totalPackage.toLocaleString("id-ID")}k`,
+      value: `Rp ${stats.totalPackage.toLocaleString("id-ID")}`,
       icon: Banknote,
       color: "bg-stone-100 text-stone-600",
       border: "border-stone-200",
     },
     {
       label: "Sudah Diterima",
-      value: `Rp ${stats.totalPaid.toLocaleString("id-ID")}k`,
+      value: `Rp ${stats.totalPaid.toLocaleString("id-ID")}`,
       icon: TrendingUp,
       color: "bg-emerald-100 text-emerald-600",
       border: "border-emerald-200",
@@ -55,7 +55,7 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
     },
     {
       label: "Belum Dibayar",
-      value: `Rp ${stats.totalUnpaid.toLocaleString("id-ID")}k`,
+      value: `Rp ${stats.totalUnpaid.toLocaleString("id-ID")}`,
       icon: AlertCircle,
       color: "bg-red-100 text-red-500",
       border: "border-red-200",
@@ -79,7 +79,7 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4">
         {statCards.map((card) => (
           <div key={card.label} className={cn("card p-4 md:p-5 border", card.border)}>
             <div className="flex items-start justify-between">
@@ -116,8 +116,8 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
                       <span className="text-xs text-stone-400 ml-2">{data.count} booking</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-600">Rp {data.paid.toLocaleString()}k</p>
-                      <p className="text-xs text-stone-400">dari Rp {data.package.toLocaleString()}k</p>
+                      <p className="text-sm font-bold text-emerald-600">Rp {data.paid.toLocaleString("id-ID")}</p>
+                      <p className="text-xs text-stone-400">dari Rp {data.package.toLocaleString("id-ID")}</p>
                     </div>
                   </div>
                   <div className="progress-bar">
@@ -157,14 +157,14 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
                         <p className="text-xs text-stone-400">{formatDate(b.startDate)}</p>
                       </td>
                       <td className="px-4 py-3 text-right text-stone-700 font-medium">
-                        {b.package.toLocaleString()}k
+                        {b.package.toLocaleString("id-ID")}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-emerald-600">
-                        {b.paid.toLocaleString()}k
+                        {b.paid.toLocaleString("id-ID")}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {sisa > 0 ? (
-                          <span className="text-red-500 font-semibold">{sisa.toLocaleString()}k</span>
+                          <span className="text-red-500 font-semibold">{sisa.toLocaleString("id-ID")}</span>
                         ) : (
                           <span className="text-emerald-500 font-bold">✓ Lunas</span>
                         )}
@@ -176,9 +176,9 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
               <tfoot>
                 <tr className="bg-stone-50 border-t-2 border-stone-200">
                   <td className="px-4 py-3 font-bold text-stone-700 text-sm">TOTAL</td>
-                  <td className="px-4 py-3 text-right font-bold text-stone-900">{stats.totalPackage.toLocaleString()}k</td>
-                  <td className="px-4 py-3 text-right font-bold text-emerald-600">{stats.totalPaid.toLocaleString()}k</td>
-                  <td className="px-4 py-3 text-right font-bold text-red-500">{stats.totalUnpaid.toLocaleString()}k</td>
+                  <td className="px-4 py-3 text-right font-bold text-stone-900">{stats.totalPackage.toLocaleString("id-ID")}</td>
+                  <td className="px-4 py-3 text-right font-bold text-emerald-600">{stats.totalPaid.toLocaleString("id-ID")}</td>
+                  <td className="px-4 py-3 text-right font-bold text-red-500">{stats.totalUnpaid.toLocaleString("id-ID")}</td>
                 </tr>
               </tfoot>
             </table>

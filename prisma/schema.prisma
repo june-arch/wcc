@@ -85,7 +85,9 @@ model Booking {
   status        BookingStatus @default(PENDING)
   notes         String?
   isConfirmed   Boolean       @default(false)
-  pricePackageId String?      // optional link to price package
+  transport     Int           @default(0) // transport allowance in thousands
+  discount      Int           @default(0) // discount in thousands
+  pricePackageId String?
   pricePackage  PricePackage? @relation(fields: [pricePackageId], references: [id])
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

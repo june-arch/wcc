@@ -24,8 +24,9 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  const totalRevenue = allBookings.reduce((s, b) => s + b.paid, 0);
-  const unpaidRevenue = allBookings.reduce((s, b) => s + (b.package - b.paid), 0);
+  const totalRevenue = allBookings.reduce((s, b) => s + b.package, 0);
+  const paidRevenue = allBookings.reduce((s, b) => s + b.paid, 0);
+  const unpaidRevenue = totalRevenue - paidRevenue;
   const completedCount = allBookings.filter((b) => b.status === "COMPLETED").length;
   const upcomingBookings = allBookings
     .filter((b) => new Date(b.startDate) >= now)

@@ -3,8 +3,9 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   LayoutList, CalendarDays, Plus, Search,
-  ChevronLeft, ChevronRight, Pencil, Trash2,
+  ChevronLeft, ChevronRight, Pencil, Trash2, Eye,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { cn, formatDate, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil } from "@/lib/utils";
 import type { BookingWithRelations, ViewMode, FilterStatus } from "@/types";
 import BookingModal from "./BookingModal";
@@ -36,14 +37,16 @@ export default function BookingsClient({ initialBookings }: Props) {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("ALL");
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedBooking, setSelectedBooking] = useState<BookingWithRelations | null>(null);
+  const [editingBooking, setEditingBooking] = useState<BookingWithRelations | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; bookingId: string | null }>({ isOpen: false, bookingId: null });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Listen for edit event from detail panel
   useEffect(() => {
     const handleEdit = (e: CustomEvent<BookingWithRelations>) => {
-      setSelectedBooking(e.detail);
+      setEditingBooking(e.detail);
       setShowEditModal(true);
     };
     window.addEventListener('edit-booking', handleEdit as EventListener);
@@ -98,16 +101,30 @@ export default function BookingsClient({ initialBookings }: Props) {
 
   const handleDelete = useCallback(async () => {
     if (!deleteConfirm.bookingId) return;
+    
+    const bookingId = deleteConfirm.bookingId;
+    const originalBookings = [...bookings];
+    const originalSelected = selectedBooking;
+    
+    // Optimistic update
+    setBookings((prev) => prev.filter((b) => b.id !== bookingId));
+    if (selectedBooking?.id === bookingId) setSelectedBooking(null);
+    setDeletingId(bookingId);
+    setDeleteConfirm({ isOpen: false, bookingId: null });
+    
     try {
-      const res = await fetch(`/api/bookings/${deleteConfirm.bookingId}`, { method: "DELETE" });
+      const res = await fetch(`/api/bookings/${bookingId}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      setBookings((prev) => prev.filter((b) => b.id !== deleteConfirm.bookingId));
-      if (selectedBooking?.id === deleteConfirm.bookingId) setSelectedBooking(null);
-      setDeleteConfirm({ isOpen: false, bookingId: null });
+      toast.success("Booking berhasil dihapus");
     } catch {
-      alert("Gagal menghapus booking");
+      // Rollback optimistic update
+      setBookings(originalBookings);
+      setSelectedBooking(originalSelected);
+      toast.error("Gagal menghapus booking");
+    } finally {
+      setDeletingId(null);
     }
-  }, [deleteConfirm.bookingId, selectedBooking]);
+  }, [deleteConfirm.bookingId, selectedBooking, bookings]);
 
   // Full server refresh — used after add booking (need fresh IDs/relations)
   const refreshAll = useCallback(async () => {
@@ -204,9 +221,10 @@ export default function BookingsClient({ initialBookings }: Props) {
               bookings={filtered}
               selectedId={selectedBooking?.id}
               onSelect={setSelectedBooking}
-              onEdit={(b) => { setSelectedBooking(b); setShowEditModal(true); }}
+              onEdit={(b) => { setEditingBooking(b); setShowEditModal(true); }}
               onDelete={(id) => setDeleteConfirm({ isOpen: true, bookingId: id })}
               EVENT_TYPE_COLORS={EVENT_TYPE_COLORS}
+              deletingId={deletingId}
             />
           ) : (
             <CalendarView
@@ -223,8 +241,8 @@ export default function BookingsClient({ initialBookings }: Props) {
         </div>
 
         {selectedBooking && (
-          <div className="w-full lg:w-80 xl:w-96 shrink-0 animate-slide-in fixed inset-0 z-40 lg:static lg:z-auto bg-white lg:bg-transparent">
-            <div className="h-full lg:h-auto overflow-y-auto">
+          <div className="w-full shrink-0 animate-slide-in fixed inset-0 z-40 bg-white">
+            <div className="h-full overflow-y-auto">
               <BookingDetailPanel
                 booking={selectedBooking}
                 onClose={() => setSelectedBooking(null)}
@@ -246,11 +264,14 @@ export default function BookingsClient({ initialBookings }: Props) {
         />
       )}
 
-      {showEditModal && selectedBooking && (
+      {showEditModal && editingBooking && (
         <EditBookingModal
-          booking={selectedBooking}
-          onClose={() => setShowEditModal(false)}
-          onSuccess={handleUpdate}
+          booking={editingBooking}
+          onClose={() => { setShowEditModal(false); setEditingBooking(null); }}
+          onSuccess={(updated) => {
+            handleUpdate(updated);
+            setEditingBooking(null);
+          }}
         />
       )}
 
@@ -271,7 +292,7 @@ export default function BookingsClient({ initialBookings }: Props) {
 
 /* ─── List View ──────────────────────────────────────────────────────────────── */
 function ListView({
-  bookings, selectedId, onSelect, onEdit, onDelete, EVENT_TYPE_COLORS,
+  bookings, selectedId, onSelect, onEdit, onDelete, EVENT_TYPE_COLORS, deletingId,
 }: {
   bookings: BookingWithRelations[];
   selectedId?: string;
@@ -279,6 +300,7 @@ function ListView({
   onEdit: (b: BookingWithRelations) => void;
   onDelete: (id: string) => void;
   EVENT_TYPE_COLORS: Record<string, string>;
+  deletingId: string | null;
 }) {
   if (bookings.length === 0) {
     return (
@@ -291,27 +313,26 @@ function ListView({
   }
 
   return (
-    <div className="card overflow-hidden">
-      <div className="divide-y divide-stone-100">
-        {bookings.map((b) => {
-          const days = getDaysUntil(b.startDate);
-          const pay = getPaymentStatus(b.paid, b.package);
-          const isSelected = b.id === selectedId;
+    <div className="space-y-2">
+      {bookings.map((b) => {
+        const days = getDaysUntil(b.startDate);
+        const pay = getPaymentStatus(b.paid, b.package);
+        const isSelected = b.id === selectedId;
 
-          return (
-            <div
-              key={b.id}
-              className={cn(
-                "w-full flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 sm:py-4 text-left transition-colors border-l-2 group",
-                isSelected
-                  ? "bg-orange-50 border-l-orange-400"
-                  : "hover:bg-stone-50 border-l-transparent"
-              )}
-            >
+        return (
+          <div
+            key={b.id}
+            className={cn(
+              "w-full flex flex-col sm:flex-row gap-3 sm:gap-4 px-3 sm:px-4 py-3 sm:py-4 text-left transition-colors border rounded-xl bg-white",
+              isSelected
+                ? "bg-orange-50 border-orange-200 ring-1 ring-orange-200"
+                : "border-stone-200 hover:border-stone-300"
+            )}
+          >
               {/* Date block */}
-              <button onClick={() => onSelect(b)} className="shrink-0">
+              <div className="flex items-start gap-3 sm:block sm:shrink-0">
                 <div className={cn(
-                  "w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border",
+                  "w-12 h-12 sm:w-12 sm:h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border",
                   isToday(new Date(b.startDate))
                     ? "bg-orange-500 border-orange-400"
                     : "bg-stone-50 border-stone-200"
@@ -329,10 +350,33 @@ function ListView({
                     {new Date(b.startDate).getDate()}
                   </span>
                 </div>
-              </button>
 
-              {/* Main content - clickable to select */}
-              <button onClick={() => onSelect(b)} className="flex-1 min-w-0 text-left">
+                {/* Main content - shown inline on mobile next to date */}
+                <div className="flex-1 min-w-0 sm:hidden">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-stone-900 text-sm">{b.clientName}</span>
+                    {b.isConfirmed && (
+                      <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-100">✓</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {b.eventType.slice(0, 2).map((et) => (
+                      <span
+                        key={et}
+                        className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", EVENT_TYPE_COLORS[et] ?? "bg-stone-100 text-stone-600")}
+                      >
+                        {et === "TAMAT_KAJI" ? "Tamat Kaji" : et.charAt(0) + et.slice(1).toLowerCase()}
+                      </span>
+                    ))}
+                    {b.eventType.length > 2 && (
+                      <span className="text-[10px] text-stone-400">+{b.eventType.length - 2}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Main content - desktop only */}
+              <div className="hidden sm:block flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-stone-900 text-sm">{b.clientName}</span>
                   {b.isConfirmed && (
@@ -353,51 +397,69 @@ function ListView({
                   ))}
                   {b.location && <span className="text-xs text-stone-400">📍 {b.location}</span>}
                 </div>
-              </button>
+              </div>
 
               {/* Right side - status, price, actions */}
-              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center sm:text-right shrink-0 gap-2 sm:gap-1 sm:space-y-1 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
+                {/* Top row on mobile: status + actions */}
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                   <span className={cn("badge text-[10px]", getStatusColor(b.status))}>
                     {getStatusLabel(b.status)}
                   </span>
-                  {/* Edit/Delete buttons - always visible on mobile, hover on desktop */}
+                  {/* View/Edit/Delete buttons */}
                   <div className="flex items-center gap-1">
                     <button
+                      onClick={(e) => { e.stopPropagation(); onSelect(b); }}
+                      className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      title="Lihat Detail"
+                    >
+                      <Eye size={14} className="sm:w-4 sm:h-4" />
+                    </button>
+                    <button
                       onClick={(e) => { e.stopPropagation(); onEdit(b); }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                      className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-orange-600 hover:bg-orange-50 transition-colors"
                       title="Edit"
                     >
-                      <Pencil size={16} />
+                      <Pencil size={14} className="sm:w-4 sm:h-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onDelete(b.id); }}
-                      className="w-8 h-8 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                      disabled={deletingId === b.id}
+                      className={cn(
+                        "w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg transition-colors",
+                        deletingId === b.id 
+                          ? "text-stone-300 cursor-not-allowed" 
+                          : "text-stone-400 hover:text-red-600 hover:bg-red-50"
+                      )}
                       title="Hapus"
                     >
-                      <Trash2 size={16} />
+                      {deletingId === b.id ? (
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-stone-300 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-stone-900">Rp {b.package.toLocaleString()}k</p>
+                {/* Bottom: price and payment status */}
+                <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0">
+                  <p className="text-sm font-bold text-stone-900">Rp {b.package.toLocaleString("id-ID")}</p>
                   <span className={cn("text-[11px] font-medium px-1.5 py-0.5 rounded-full", pay.color)}>
                     {pay.label}
                   </span>
+                  {days >= 0 && days <= 30 && (
+                    <p className={cn(
+                      "text-[11px] font-medium sm:mt-0.5",
+                      days === 0 ? "text-red-500" : days <= 3 ? "text-amber-500" : "text-stone-400"
+                    )}>
+                      {days === 0 ? "Hari ini!" : days === 1 ? "Besok" : `${days}h lagi`}
+                    </p>
+                  )}
                 </div>
-                {days >= 0 && days <= 30 && (
-                  <p className={cn(
-                    "text-[11px] font-medium",
-                    days === 0 ? "text-red-500" : days <= 3 ? "text-amber-500" : "text-stone-400"
-                  )}>
-                    {days === 0 ? "Hari ini!" : days === 1 ? "Besok" : `${days}h lagi`}
-                  </p>
-                )}
               </div>
             </div>
           );
         })}
-      </div>
     </div>
   );
 }

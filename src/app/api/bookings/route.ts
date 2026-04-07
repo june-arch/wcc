@@ -74,6 +74,8 @@ export async function POST(req: NextRequest) {
         status: bookingData.status,
         isConfirmed: bookingData.isConfirmed,
         notes: bookingData.notes,
+        transport: bookingData.transport || 0,
+        discount: bookingData.discount || 0,
         pricePackageId: bookingData.pricePackageId,
         createdById: session.user.id,
         // Create add-ons if provided

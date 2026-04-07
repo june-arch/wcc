@@ -42,8 +42,8 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
     },
     {
       label: "Total Pendapatan",
-      value: `Rp ${stats.totalRevenue.toLocaleString("id-ID")}k`,
-      sub: `Sisa Rp ${stats.unpaidRevenue.toLocaleString("id-ID")}k`,
+      value: `Rp ${stats.totalRevenue.toLocaleString("id-ID")}`,
+      sub: `Sisa Rp ${stats.unpaidRevenue.toLocaleString("id-ID")}`,
       icon: Banknote,
       color: "bg-emerald-50 text-emerald-600",
       border: "border-emerald-100",
@@ -70,22 +70,40 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-stone-900">Dashboard</h1>
-        <p className="text-stone-500 text-sm mt-0.5">Ringkasan aktivitas WCC Oranye Capture</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight">Dashboard</h1>
+        <p className="text-stone-500 text-sm md:text-base mt-1">Ringkasan aktivitas WCC Oranye Capture</p>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {statCards.map((card) => (
-          <div key={card.label} className={cn("card p-4 md:p-5 border", card.border)}>
+      {/* Stats grid - Total Pendapatan & Total Booking in one row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+        {statCards.slice(0, 2).map((card) => (
+          <div key={card.label} className={cn("card p-4 md:p-6 border", card.border)}>
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">{card.label}</p>
-                <p className="text-xl md:text-2xl font-bold text-stone-900 mt-1 leading-none">{card.value}</p>
-                <p className="text-xs text-stone-400 mt-1.5">{card.sub}</p>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{card.label}</p>
+                <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">{card.value}</p>
+                <p className="text-sm text-stone-400 mt-2">{card.sub}</p>
               </div>
-              <div className={cn("w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center", card.color)}>
-                <card.icon size={16} className="md:w-[18px] md:h-[18px]" />
+              <div className={cn("w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center", card.color)}>
+                <card.icon size={18} className="md:w-5 md:h-5" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Stats grid - Remaining cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4">
+        {statCards.slice(2).map((card) => (
+          <div key={card.label} className={cn("card p-4 md:p-6 border", card.border)}>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{card.label}</p>
+                <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">{card.value}</p>
+                <p className="text-sm text-stone-400 mt-2">{card.sub}</p>
+              </div>
+              <div className={cn("w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center", card.color)}>
+                <card.icon size={18} className="md:w-5 md:h-5" />
               </div>
             </div>
           </div>
@@ -97,16 +115,21 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
         <div className="card">
           <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-stone-900 text-sm">Booking Mendatang</h2>
-              <p className="text-xs text-stone-400 mt-0.5">Jadwal yang akan datang</p>
+              <h2 className="font-semibold text-stone-900 text-base md:text-lg">Booking Mendatang</h2>
+              <p className="text-sm text-stone-500 mt-0.5">Jadwal yang akan datang</p>
             </div>
-            <Link href="/dashboard/bookings" className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
-              Lihat semua <ArrowRight size={12} />
+            <Link href="/dashboard/bookings" className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1">
+              Lihat semua <ArrowRight size={14} />
             </Link>
           </div>
           <div className="divide-y divide-stone-50">
             {upcomingBookings.length === 0 ? (
-              <div className="px-5 py-8 text-center text-stone-400 text-sm">Tidak ada booking mendatang</div>
+              <div className="px-5 py-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3">
+                  <CalendarDays size={20} className="text-stone-400" />
+                </div>
+                <p className="text-stone-500 text-sm font-medium">Tidak ada booking mendatang</p>
+              </div>
             ) : (
               upcomingBookings.map((b) => {
                 const days = getDaysUntil(b.startDate);
@@ -123,22 +146,22 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-stone-900 truncate">{b.clientName}</p>
-                      <p className="text-xs text-stone-400 truncate">
+                      <p className="text-base font-semibold text-stone-900 truncate">{b.clientName}</p>
+                      <p className="text-sm text-stone-500 truncate">
                         {b.location ?? "—"} · {b.eventType.map(e => e.charAt(0) + e.slice(1).toLowerCase()).join(", ")}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       <span className={cn(
-                        "text-xs font-semibold px-2 py-0.5 rounded-full",
+                        "text-xs font-medium px-2.5 py-1 rounded-full",
                         days <= 0 ? "bg-red-50 text-red-600" :
                         days <= 7 ? "bg-amber-50 text-amber-600" :
-                        "bg-stone-100 text-stone-500"
+                        "bg-stone-100 text-stone-600"
                       )}>
                         {days <= 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h lagi`}
                       </span>
                       {sisa > 0 && (
-                        <p className="text-[11px] text-red-500 mt-0.5">Sisa Rp{sisa}k</p>
+                        <p className="text-xs text-red-500 mt-1 font-medium">Sisa Rp{sisa.toLocaleString("id-ID")}</p>
                       )}
                     </div>
                   </Link>

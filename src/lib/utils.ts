@@ -16,7 +16,7 @@ export function formatDate(date: Date | string | null | undefined): string {
 }
 
 export function formatCurrency(amount: number): string {
-  return `Rp ${amount.toLocaleString("id-ID")}k`;
+  return `Rp ${amount.toLocaleString("id-ID")}`;
 }
 
 export function formatEventTypes(types: string[]): string {
@@ -62,7 +62,7 @@ export function getPriorityColor(priority: string): string {
 
 export function getPaymentStatus(paid: number, total: number) {
   if (paid >= total) return { label: "Lunas", color: "text-emerald-600 bg-emerald-50" };
-  if (paid > 0) return { label: `DP Rp ${paid}k`, color: "text-amber-600 bg-amber-50" };
+  if (paid > 0) return { label: `DP Rp ${paid.toLocaleString("id-ID")}`, color: "text-amber-600 bg-amber-50" };
   return { label: "Belum Bayar", color: "text-red-600 bg-red-50" };
 }
 

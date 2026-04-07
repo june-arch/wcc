@@ -1,8 +1,6 @@
 "use client";
-// src/components/ui/ResponsiveModal.tsx
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+// src/components/ui/ResponsiveModal.tsx - Always Drawer Style
+import { ArrowLeft } from "lucide-react";
 
 interface ResponsiveModalProps {
   isOpen: boolean;
@@ -10,7 +8,6 @@ interface ResponsiveModalProps {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
-  maxWidth?: string;
 }
 
 export default function ResponsiveModal({
@@ -19,55 +16,30 @@ export default function ResponsiveModal({
   title,
   subtitle,
   children,
-  maxWidth = "max-w-lg",
 }: ResponsiveModalProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-      style={{ background: "rgba(0,0,0,0.45)" }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      className="fixed inset-0 z-50 bg-white"
     >
-      {/* Mobile: Full screen drawer from bottom */}
-      <div
-        className={cn(
-          "bg-white w-full overflow-y-auto animate-slide-up",
-          // Mobile: full screen drawer
-          "fixed inset-x-0 bottom-0 top-0 sm:static sm:inset-auto rounded-t-2xl sm:rounded-2xl",
-          // Desktop: modal style
-          `sm:${maxWidth} sm:max-h-[90vh]`
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-stone-100 sticky top-0 bg-white z-10 rounded-t-2xl sm:rounded-t-2xl">
-          <div className="min-w-0">
-            <h2 className="font-bold text-stone-900 text-base sm:text-lg truncate">{title}</h2>
-            {subtitle && <p className="text-xs text-stone-400 mt-0.5 truncate">{subtitle}</p>}
-          </div>
-          {/* Mobile handle bar */}
-          <div className="flex items-center gap-2">
-            <div className="sm:hidden w-8 h-1 bg-stone-200 rounded-full" />
-            <button
-              onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-stone-100 transition-colors"
-            >
-              <X size={20} className="text-stone-500" />
-            </button>
-          </div>
+      {/* Header - Drawer Style */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-stone-100 sticky top-0 bg-white z-10">
+        <button
+          onClick={onClose}
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors -ml-2"
+        >
+          <ArrowLeft size={20} className="text-stone-600" />
+        </button>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-bold text-stone-900 text-base truncate">{title}</h2>
+          {subtitle && <p className="text-xs text-stone-400 truncate">{subtitle}</p>}
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="p-4 sm:p-6 pb-safe">{children}</div>
+      {/* Content - Scrollable */}
+      <div className="h-[calc(100vh-60px)] overflow-y-auto p-4 pb-8">
+        {children}
       </div>
     </div>
   );

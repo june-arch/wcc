@@ -23,7 +23,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="hidden md:flex flex-col bg-white border-r border-stone-200 shrink-0"
+      className="hidden flex-col bg-white border-r border-stone-200 shrink-0"
       style={{ width: "var(--sidebar-w)" }}
     >
       {/* Brand */}

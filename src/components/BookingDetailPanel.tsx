@@ -2,10 +2,11 @@
 // src/components/BookingDetailPanel.tsx
 import { useState } from "react";
 import {
-  X, MapPin, Calendar, Tag, CreditCard,
-  Plus, Trash2, Loader2, ArrowLeft, Pencil,
+  MapPin, Calendar, Tag, CreditCard,
+  Plus, Loader2, ArrowLeft, Pencil,
 } from "lucide-react";
 import { cn, formatDate, getStatusColor, getStatusLabel, getPaymentStatus } from "@/lib/utils";
+import { FormattedNumberInput } from "./ui/FormattedNumberInput";
 import type { BookingWithRelations, Payment } from "@/types";
 import toast from "react-hot-toast";
 
@@ -88,7 +89,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
       onPatch(booking.id, {
         payments: [saved, ...booking.payments.filter((p) => p.id !== tempPayment.id)],
       });
-      toast.success(`Pembayaran Rp${amount}k dicatat`);
+      toast.success(`Pembayaran Rp${amount.toLocaleString("id-ID")} dicatat`);
     } catch {
       // Rollback
       onPatch(booking.id, {
@@ -109,10 +110,10 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
     >
       {/* Header */}
       <div className="px-3 sm:px-4 py-3 sm:py-4 border-b border-stone-100 shrink-0">
-        {/* Mobile back button */}
+        {/* Back button */}
         <button 
           onClick={onClose} 
-          className="lg:hidden flex items-center gap-1 text-stone-500 hover:text-stone-700 text-sm font-medium mb-2 -ml-1"
+          className="flex items-center gap-1 text-stone-500 hover:text-stone-700 text-sm font-medium mb-2 -ml-1"
         >
           <ArrowLeft size={16} />
           Kembali ke list
@@ -140,9 +141,6 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
               title="Edit booking"
             >
               <Pencil size={14} />
-            </button>
-            <button onClick={onClose} className="btn btn-ghost w-7 h-7 p-0 justify-center shrink-0 hidden lg:flex">
-              <X size={14} />
             </button>
           </div>
         </div>
@@ -195,13 +193,13 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
 
             <InfoRow icon={CreditCard} label="Paket">
               <div>
-                <p className="text-sm font-bold text-stone-900">Rp {booking.package.toLocaleString()}k</p>
+                <p className="text-sm font-bold text-stone-900">Rp {booking.package.toLocaleString("id-ID")}</p>
                 <div className="progress-bar mt-1.5">
                   <div className="progress-fill" style={{ width: `${progress}%` }} />
                 </div>
                 <p className={cn("text-xs font-medium mt-1", pay.color.split(" ")[0])}>
                   {pay.label} · {progress}%
-                  {sisa > 0 && ` · Sisa Rp${sisa}k`}
+                  {sisa > 0 && ` · Sisa Rp${sisa.toLocaleString("id-ID")}`}
                 </p>
               </div>
             </InfoRow>
@@ -243,16 +241,16 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
             <div className="bg-stone-50 rounded-xl p-4 space-y-2 border border-stone-100">
               <div className="flex justify-between text-sm">
                 <span className="text-stone-500">Total Paket</span>
-                <span className="font-semibold text-stone-900">Rp {booking.package.toLocaleString()}k</span>
+                <span className="font-semibold text-stone-900">Rp {booking.package.toLocaleString("id-ID")}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-stone-500">Sudah Dibayar</span>
-                <span className="font-semibold text-emerald-600">Rp {booking.paid.toLocaleString()}k</span>
+                <span className="font-semibold text-emerald-600">Rp {booking.paid.toLocaleString("id-ID")}</span>
               </div>
               <div className="border-t border-stone-200 pt-2 flex justify-between text-sm">
                 <span className="font-semibold text-stone-600">Sisa</span>
                 <span className={cn("font-bold", sisa > 0 ? "text-red-600" : "text-emerald-600")}>
-                  {sisa > 0 ? `Rp ${sisa.toLocaleString()}k` : "✓ Lunas"}
+                  {sisa > 0 ? `Rp ${sisa.toLocaleString("id-ID")}` : "✓ Lunas"}
                 </span>
               </div>
               <div className="progress-bar mt-1">
@@ -274,15 +272,13 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
                 </p>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium">Rp</span>
-                    <input
-                      className="input-base text-sm py-1.5 pl-8"
-                      placeholder="Jumlah (ribu)"
-                      type="number"
-                      min="1"
-                      value={newPayment}
-                      onChange={(e) => setNewPayment(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddPayment()}
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">Rp</span>
+                    <FormattedNumberInput
+                      value={parseInt(newPayment) || 0}
+                      onChange={(val: number) => setNewPayment(val.toString())}
+                      placeholder="0"
+                      min={1}
+                      className="text-sm py-1.5"
                     />
                   </div>
                   <button
@@ -315,7 +311,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
                         )}
                       >
                         <div>
-                          <p className="text-sm font-semibold text-emerald-800">+Rp {p.amount.toLocaleString()}k</p>
+                          <p className="text-sm font-semibold text-emerald-800">+Rp {p.amount.toLocaleString("id-ID")}</p>
                           {p.note && <p className="text-xs text-emerald-600">{p.note}</p>}
                         </div>
                         <p className="text-xs text-emerald-600">

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Loader2, Package, Check, Plus, Minus, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ResponsiveModal from "./ui/ResponsiveModal";
+import { FormattedNumberInput } from "./ui/FormattedNumberInput";
 import type { BookingWithRelations, PricePackage, AddOn } from "@/types";
 import toast from "react-hot-toast";
 
@@ -40,6 +41,8 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
     startDate: "",
     endDate: "",
     notes: "",
+    transport: "",
+    discount: "",
     status: "PENDING",
     isConfirmed: false,
   });
@@ -58,9 +61,11 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
   }, []);
 
   // Calculate total price
-  const basePrice = selectedPackage?.price || 0;
+  const basePrice = selectedPackage?.price || parseInt(form.package) || 0;
   const addOnsTotal = selectedAddOns.reduce((sum, addon) => sum + addon.price, 0);
-  const totalPrice = basePrice + addOnsTotal;
+  const transport = parseInt(form.transport) || 0;
+  const discount = parseInt(form.discount) || 0;
+  const totalPrice = Math.max(0, basePrice + addOnsTotal + transport - discount);
 
   const applyPackage = (pkg: PricePackage) => {
     setSelectedPackage(pkg);
@@ -109,6 +114,8 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
           package: totalPrice, // Use calculated total price
           dp: parseInt(form.dp) || 0,
           paid: parseInt(form.dp) || 0,
+          transport: parseInt(form.transport) || 0,
+          discount: parseInt(form.discount) || 0,
           location: form.location.trim() || null,
           eventType: form.eventType,
           startDate: form.startDate,
@@ -224,11 +231,11 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
           />
         </div>
 
-        {/* Harga & DP */}
+        {/* Harga, DP, Transport & Diskon */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-              Paket (Rp ribu) <span className="text-red-400">*</span>
+              Paket (Rp) <span className="text-red-400">*</span>
             </label>
             {/* Package selector button */}
             {pricePackages.length > 0 && (
@@ -244,29 +251,49 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
               </button>
             )}
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none">Rp</span>
-              <input
-                type="number"
-                className="input-base w-full !pl-8 bg-stone-50"
-                placeholder="800"
-                min="0"
-                value={form.package}
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">Rp</span>
+              <FormattedNumberInput
+                value={parseInt(form.package) || 0}
+                onChange={() => {}} // disabled, controlled by package selector
+                placeholder="0"
+                min={0}
                 disabled
-                title="Pilih paket dari tombol di atas atau isi harga manual"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">DP (Rp ribu)</label>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">DP (Rp)</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none">Rp</span>
-              <input
-                type="number"
-                className="input-base w-full !pl-8"
-                placeholder="300"
-                min="0"
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">Rp</span>
+              <FormattedNumberInput
                 value={form.dp}
-                onChange={(e) => setForm({ ...form, dp: e.target.value })}
+                onChange={(val: number) => setForm({ ...form, dp: val.toString() })}
+                placeholder="0"
+                min={0}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Transport (Rp)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">Rp</span>
+              <FormattedNumberInput
+                value={form.transport}
+                onChange={(val: number) => setForm({ ...form, transport: val.toString() })}
+                placeholder="0"
+                min={0}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Diskon (Rp)</label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-stone-400 font-medium pointer-events-none z-10">-Rp</span>
+              <FormattedNumberInput
+                value={form.discount}
+                onChange={(val: number) => setForm({ ...form, discount: val.toString() })}
+                placeholder="0"
+                min={0}
               />
             </div>
           </div>
@@ -312,7 +339,7 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
                   className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-medium"
                 >
                   {addon.name}
-                  {addon.price > 0 && ` (+${addon.price}K)`}
+                  {addon.price > 0 && ` (+${addon.price.toLocaleString("id-ID")})`}
                   <button
                     type="button"
                     onClick={() => toggleAddOn(addon)}
@@ -342,19 +369,33 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
           {/* Total Price Breakdown */}
           <div className="p-3 rounded-lg bg-stone-50 border border-stone-200 space-y-1">
             <div className="flex justify-between text-sm">
-              <span className="text-stone-500">Paket {selectedPackage?.name || "-"}</span>
-              <span className="font-medium">Rp {basePrice.toLocaleString("id-ID")}K</span>
+              <span className="text-stone-500">
+                Paket {selectedPackage?.name || (parseInt(form.package) > 0 ? "(Custom)" : "-")}
+              </span>
+              <span className="font-medium">Rp {basePrice.toLocaleString("id-ID")}</span>
             </div>
             {selectedAddOns.map((addon) => (
               <div key={addon.id} className="flex justify-between text-sm">
                 <span className="text-stone-500">{addon.name}</span>
-                <span className="font-medium">+{addon.price}K</span>
+                <span className="font-medium">+{addon.price.toLocaleString("id-ID")}</span>
               </div>
             ))}
+            {transport > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-stone-500">Transport</span>
+                <span className="font-medium">+{transport.toLocaleString("id-ID")}</span>
+              </div>
+            )}
+            {discount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-stone-500">Diskon</span>
+                <span className="font-medium text-emerald-600">-{discount.toLocaleString("id-ID")}</span>
+              </div>
+            )}
             <div className="border-t border-stone-200 pt-1 mt-1">
               <div className="flex justify-between text-sm font-semibold">
                 <span className="text-stone-700">Total</span>
-                <span className="text-orange-600">Rp {totalPrice.toLocaleString("id-ID")}K</span>
+                <span className="text-orange-600">Rp {totalPrice.toLocaleString("id-ID")}</span>
               </div>
             </div>
           </div>
@@ -407,7 +448,7 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
                       {pkg.name}
                     </h3>
                     <p className={cn("text-lg font-bold mt-1", isSelected ? "text-orange-600" : "text-orange-600")}>
-                      Rp {pkg.price.toLocaleString("id-ID")}K
+                      Rp {pkg.price.toLocaleString("id-ID")}
                     </p>
                   </div>
                   <div className="flex gap-1">
@@ -477,7 +518,7 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
                       {addon.name}
                     </h3>
                     <span className={cn("text-sm font-semibold", isSelected ? "text-orange-600" : "text-stone-600")}>
-                      {addon.price === 0 ? "Free" : `+${addon.price}K`}
+                      {addon.price === 0 ? "Free" : `+${addon.price.toLocaleString("id-ID")}`}
                     </span>
                   </div>
                   {addon.description && (
