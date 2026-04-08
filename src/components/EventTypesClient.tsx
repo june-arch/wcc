@@ -185,7 +185,7 @@ export default function EventTypesClient({ eventTypes: initialEventTypes }: Prop
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-5 animate-fade-in pb-20">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>

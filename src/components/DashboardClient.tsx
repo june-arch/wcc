@@ -58,7 +58,7 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-20">
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-stone-900 tracking-tight">Dashboard</h1>

@@ -94,7 +94,7 @@ export default function FinanceClient({ bookings }: Props) {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-20">
       <div>
         <h1 className="text-2xl font-bold text-stone-900">Keuangan</h1>
         <p className="text-stone-500 text-sm mt-0.5">Ringkasan pendapatan & pembayaran</p>

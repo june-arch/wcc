@@ -35,7 +35,7 @@ export default function SettingsClient({ user }: Props) {
   };
 
   return (
-    <div className="space-y-5 animate-fade-in max-w-2xl">
+    <div className="space-y-5 animate-fade-in max-w-2xl pb-20">
       <div>
         <h1 className="text-xl md:text-2xl font-bold text-stone-900">Pengaturan</h1>
         <p className="text-stone-500 text-sm mt-0.5">Kelola akun dan preferensi</p>
