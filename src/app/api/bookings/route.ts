@@ -66,6 +66,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { addOns, eventTypeIds, initialPayment, ...bookingData } = body;
     
+    // Convert event type names to UUIDs if provided
+    let eventTypeIdMap: Map<string, string> = new Map();
+    if (eventTypeIds && eventTypeIds.length > 0) {
+      const eventTypes = await prisma.eventType.findMany({
+        where: { name: { in: eventTypeIds } },
+        select: { id: true, name: true },
+      });
+      eventTypeIdMap = new Map(eventTypes.map(et => [et.name, et.id]));
+    }
+    
     const booking = await prisma.booking.create({
       data: {
         clientName: bookingData.clientName,
@@ -83,9 +93,12 @@ export async function POST(req: NextRequest) {
         // Create event types if provided
         ...(eventTypeIds && eventTypeIds.length > 0 && {
           bookingEventTypes: {
-            create: eventTypeIds.map((eventTypeId: string) => ({
-              eventTypeId,
-            })),
+            create: eventTypeIds
+              .map((name: string) => {
+                const uuid = eventTypeIdMap.get(name);
+                return uuid ? { eventTypeId: uuid } : null;
+              })
+              .filter(Boolean) as { eventTypeId: string }[],
           },
         }),
         // Create add-ons if provided

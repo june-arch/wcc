@@ -315,8 +315,12 @@ function ListView({
       {bookings.map((b) => {
         const days = getDaysUntil(b.startDate);
         const packagePrice = b.pricePackage?.price || 0;
+        const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+        const transport = b.transport || 0;
+        const discount = b.discount || 0;
+        const totalPrice = Math.max(0, packagePrice + addOnsTotal + transport - discount);
         const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-        const pay = getPaymentStatus(totalPaid, packagePrice);
+        const pay = getPaymentStatus(totalPaid, totalPrice);
         const isSelected = b.id === selectedId;
         const eventTypes = b.bookingEventTypes?.map(bet => bet.eventType) || [];
 
@@ -457,7 +461,9 @@ function ListView({
                 </div>
                 {/* Bottom: price and payment status */}
                 <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0">
-                  <p className="text-sm font-bold text-stone-900">Rp {packagePrice.toLocaleString("id-ID")}</p>
+                  <p className="text-sm font-bold text-stone-900" title={`Paket: Rp ${packagePrice.toLocaleString("id-ID")}${addOnsTotal > 0 ? ` + Add-ons: Rp ${addOnsTotal.toLocaleString("id-ID")}` : ""}${transport > 0 ? ` + Transport: Rp ${transport.toLocaleString("id-ID")}` : ""}${discount > 0 ? ` - Diskon: Rp ${discount.toLocaleString("id-ID")}` : ""}`}>
+                    Rp {totalPrice.toLocaleString("id-ID")}
+                  </p>
                   <span className={cn("text-[11px] font-medium px-1.5 py-0.5 rounded-full", pay.color)}>
                     {pay.label}
                   </span>
