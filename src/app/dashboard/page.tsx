@@ -49,9 +49,18 @@ export default async function DashboardPage() {
 
   const unpaidRevenue = totalRevenue - paidRevenue;
   const completedCount = allBookings.filter((b) => b.status === "COMPLETED").length;
+  // Get today at midnight for date comparison
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
   const upcomingBookings = allBookings
-    .filter((b) => new Date(b.startDate) >= now)
-    .slice(0, 5)
+    .filter((b) => {
+      const startDate = new Date(b.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      return startDate.getTime() >= today.getTime(); // Include today and future
+    })
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .slice(0, 6)
     .map((b) => ({
       ...b,
       payments: b.payments || [],

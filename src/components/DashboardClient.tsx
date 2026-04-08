@@ -22,15 +22,36 @@ interface Props {
 }
 
 export default function DashboardClient({ stats, upcomingBookings }: Props) {
-  // Filter bookings happening today (startDate <= today <= endDate)
+  // Get today's date
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  
+  // Format date for display
+  const todayFormatted = today.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  
+  // Filter bookings happening today (startDate is today, OR today is between start and end)
   const ongoingToday = upcomingBookings.filter((b) => {
     const start = new Date(b.startDate);
     start.setHours(0, 0, 0, 0);
-    const end = b.endDate ? new Date(b.endDate) : start;
+    const end = b.endDate ? new Date(b.endDate) : new Date(start);
     end.setHours(0, 0, 0, 0);
-    return start <= today && today <= end;
+    const isOngoing = start.getTime() <= today.getTime() && today.getTime() <= end.getTime();
+    console.log("Check ongoing:", b.clientName, "start:", start.toISOString(), "today:", today.toISOString(), "isOngoing:", isOngoing);
+    return isOngoing;
+  });
+  
+  console.log("ongoingToday count:", ongoingToday.length, "upcomingBookings count:", upcomingBookings.length);
+  
+  // Filter upcoming to exclude ongoing today bookings
+  const filteredUpcoming = upcomingBookings.filter((b) => {
+    const start = new Date(b.startDate);
+    start.setHours(0, 0, 0, 0);
+    return start.getTime() > today.getTime(); // Only future bookings (not today)
   });
 
   const statCards = [
@@ -66,15 +87,6 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
       color: "bg-amber-50 text-amber-600",
       border: "border-amber-100",
     },
-    {
-      label: "Berjalan Hari Ini",
-      value: ongoingToday.length,
-      sub: ongoingToday.length > 0 ? `${ongoingToday.map(b => b.clientName.split(" ")[0]).join(", ")}` : "Tidak ada acara",
-      icon: Play,
-      color: "bg-purple-50 text-purple-600",
-      border: "border-purple-100",
-      highlight: ongoingToday.length > 0,
-    },
   ];
 
   return (
@@ -103,10 +115,10 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
         ))}
       </div>
 
-      {/* Stats grid - Remaining cards (3 columns for cards 3-5) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+      {/* Stats grid - Remaining cards (2 columns for cards 3-4) */}
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
         {statCards.slice(2).map((card) => (
-          <div key={card.label} className={cn("card p-4 md:p-6 border", card.border, "highlight" in card && card.highlight && "ring-2 ring-purple-200")}>
+          <div key={card.label} className={cn("card p-4 md:p-6 border", card.border)}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{card.label}</p>
@@ -121,8 +133,46 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
         ))}
       </div>
 
+      {/* Today's Ongoing - Full width card */}
+      {ongoingToday.length > 0 && (
+        <div className="card border-purple-200 ring-2 ring-purple-100 bg-purple-50/20">
+          <div className="p-4 md:p-6">
+            <div className="mb-4">
+              <h2 className="font-semibold text-stone-900 text-base md:text-lg">Sedang Berjalan Hari Ini</h2>
+            </div>
+            
+            {/* Quick list of today's bookings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {ongoingToday.map((b) => (
+                <Link
+                  key={b.id}
+                  href={`/dashboard/bookings?id=${b.id}`}
+                  className="flex items-center gap-3 p-3 bg-white rounded-xl border border-purple-100 hover:border-purple-300 hover:shadow-sm transition-all"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex flex-col items-center justify-center shrink-0 border border-purple-100">
+                    <span className="text-[10px] font-bold text-purple-500 uppercase">
+                      {new Date(b.startDate).toLocaleString("id-ID", { month: "short" })}
+                    </span>
+                    <span className="text-sm font-bold text-purple-700 leading-tight">
+                      {new Date(b.startDate).getDate()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-stone-900 text-sm truncate">{b.clientName}</p>
+                    <p className="text-xs text-stone-500 truncate">{b.location || "—"}</p>
+                  </div>
+                  <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full whitespace-nowrap">
+                    Berjalan
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-1 gap-6">
-        {/* Upcoming bookings */}
+        {/* Upcoming bookings - only future bookings */}
         <div className="card">
           <div className="px-5 py-4 border-b border-stone-100 flex items-center justify-between">
             <div>
@@ -134,7 +184,7 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
             </Link>
           </div>
           <div className="divide-y divide-stone-50">
-            {upcomingBookings.length === 0 ? (
+            {filteredUpcoming.length === 0 ? (
               <div className="px-5 py-8 text-center">
                 <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-3">
                   <CalendarDays size={20} className="text-stone-400" />
@@ -142,7 +192,7 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
                 <p className="text-stone-500 text-sm font-medium">Tidak ada booking mendatang</p>
               </div>
             ) : (
-              upcomingBookings.map((b) => {
+              filteredUpcoming.map((b) => {
                 const days = getDaysUntil(b.startDate);
                 const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
                 const packagePrice = b.pricePackage?.price || 0;

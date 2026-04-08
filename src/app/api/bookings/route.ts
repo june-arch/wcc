@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
             create: {
               amount: initialPayment,
               paidAt: new Date(),
-              notes: "DP/ Pembayaran pertama",
+              note: "DP/ Pembayaran pertama",
             },
           },
         }),
