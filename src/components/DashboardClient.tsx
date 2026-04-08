@@ -54,7 +54,8 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
     {
       label: "Total Pendapatan",
       value: `Rp ${stats.totalRevenue.toLocaleString("id-ID")}`,
-      sub: `Sisa Rp ${stats.unpaidRevenue.toLocaleString("id-ID")}`,
+      sub: `Unpaid : Rp ${stats.unpaidRevenue.toLocaleString("id-ID")}`,
+      sub2: `Paid : Rp ${(stats.totalRevenue - stats.unpaidRevenue).toLocaleString("id-ID")}`,
       icon: Banknote,
       color: "bg-emerald-50 text-emerald-600",
       border: "border-emerald-100",
@@ -93,7 +94,8 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
               <div>
                 <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{card.label}</p>
                 <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">{card.value}</p>
-                <p className="text-sm text-stone-400 mt-2">{card.sub}</p>
+                {card.sub2 && <p className="text-sm text-green-400 mt-1">{card.sub2}</p>}
+                <p className="text-sm text-red-400">{card.sub}</p>
               </div>
               <div className={cn("w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center", card.color)}>
                 <card.icon size={18} className="md:w-5 md:h-5" />

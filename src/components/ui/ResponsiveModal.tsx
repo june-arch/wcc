@@ -20,11 +20,9 @@ export default function ResponsiveModal({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-white"
-    >
+    <div className="fixed inset-0 z-[60] bg-white flex flex-col" style={{ height: '100dvh' }}>
       {/* Header - Drawer Style */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-stone-100 sticky top-0 bg-white z-10">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-stone-100 shrink-0 bg-white z-10">
         <button
           onClick={onClose}
           className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-stone-100 transition-colors -ml-2"
@@ -37,8 +35,11 @@ export default function ResponsiveModal({
         </div>
       </div>
 
-      {/* Content - Scrollable */}
-      <div className="h-[calc(100vh-60px)] overflow-y-auto p-4 pb-32">
+      {/* Content - Scrollable with safe area support */}
+      <div 
+        className="flex-1 overflow-y-auto overscroll-contain p-4" 
+        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 20px) + 80px)' }}
+      >
         {children}
       </div>
     </div>
