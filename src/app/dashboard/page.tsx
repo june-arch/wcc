@@ -16,21 +16,49 @@ export default async function DashboardPage() {
 
   const [allBookings, monthBookings] = await Promise.all([
     prisma.booking.findMany({
-      include: { payments: true },
+      include: {
+        payments: true,
+        pricePackage: true,
+        bookingAddOns: { include: { addOn: true } },
+        bookingEventTypes: { include: { eventType: true } },
+      },
       orderBy: { startDate: "asc" },
     }),
     prisma.booking.findMany({
       where: { startDate: { gte: startOfMonth, lte: endOfMonth } },
+      include: {
+        pricePackage: true,
+        bookingAddOns: true,
+      },
     }),
   ]);
 
-  const totalRevenue = allBookings.reduce((s, b) => s + b.package, 0);
-  const paidRevenue = allBookings.reduce((s, b) => s + b.paid, 0);
+  // Calculate totals using new schema
+  const totalRevenue = allBookings.reduce((s, b) => {
+    const packagePrice = b.pricePackage?.price || 0;
+    const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+    const transport = b.transport || 0;
+    const discount = b.discount || 0;
+    return s + Math.max(0, packagePrice + addOnsTotal + transport - discount);
+  }, 0);
+
+  const paidRevenue = allBookings.reduce((s, b) => {
+    const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    return s + totalPaid;
+  }, 0);
+
   const unpaidRevenue = totalRevenue - paidRevenue;
   const completedCount = allBookings.filter((b) => b.status === "COMPLETED").length;
   const upcomingBookings = allBookings
     .filter((b) => new Date(b.startDate) >= now)
-    .slice(0, 5);
+    .slice(0, 5)
+    .map((b) => ({
+      ...b,
+      payments: b.payments || [],
+      pricePackage: b.pricePackage,
+      bookingAddOns: b.bookingAddOns || [],
+      bookingEventTypes: b.bookingEventTypes || [],
+    }));
 
   return (
     <DashboardClient

@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Pencil, Trash2, Eye,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { cn, formatDate, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil } from "@/lib/utils";
+import { cn, formatDate, formatDateRange, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil } from "@/lib/utils";
 import type { BookingWithRelations, ViewMode, FilterStatus } from "@/types";
 import BookingModal from "./BookingModal";
 import EditBookingModal from "./EditBookingModal";
@@ -24,7 +24,8 @@ interface Props {
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
   PENGAJIAN: "bg-purple-100 text-purple-700",
-  AKAD: "bg-blue-100 text-blue-700",
+  AKAD_MALAM: "bg-indigo-100 text-indigo-700",
+  AKAD_SIANG: "bg-cyan-100 text-cyan-700",
   RESEPSI: "bg-pink-100 text-pink-700",
   TAMAT_KAJI: "bg-teal-100 text-teal-700",
   LAINNYA: "bg-stone-100 text-stone-600",
@@ -95,8 +96,8 @@ export default function BookingsClient({ initialBookings }: Props) {
 
   const handleUpdate = useCallback((updated: BookingWithRelations) => {
     setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
-    setSelectedBooking(updated);
     setShowEditModal(false);
+    setEditingBooking(null);
   }, []);
 
   const handleDelete = useCallback(async () => {
@@ -268,10 +269,7 @@ export default function BookingsClient({ initialBookings }: Props) {
         <EditBookingModal
           booking={editingBooking}
           onClose={() => { setShowEditModal(false); setEditingBooking(null); }}
-          onSuccess={(updated) => {
-            handleUpdate(updated);
-            setEditingBooking(null);
-          }}
+          onSuccess={handleUpdate}
         />
       )}
 
@@ -304,7 +302,7 @@ function ListView({
 }) {
   if (bookings.length === 0) {
     return (
-      <div className="card py-16 text-center">
+      <div className="card py-16 text-center mb-6">
         <CalendarDays size={32} className="mx-auto text-stone-300 mb-3" />
         <p className="text-stone-500 font-medium">Tidak ada booking</p>
         <p className="text-stone-400 text-sm mt-1">Coba ubah filter atau tambah booking baru</p>
@@ -313,11 +311,14 @@ function ListView({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 pb-20">
       {bookings.map((b) => {
         const days = getDaysUntil(b.startDate);
-        const pay = getPaymentStatus(b.paid, b.package);
+        const packagePrice = b.pricePackage?.price || 0;
+        const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+        const pay = getPaymentStatus(totalPaid, packagePrice);
         const isSelected = b.id === selectedId;
+        const eventTypes = b.bookingEventTypes?.map(bet => bet.eventType) || [];
 
         return (
           <div
@@ -329,26 +330,36 @@ function ListView({
                 : "border-stone-200 hover:border-stone-300"
             )}
           >
-              {/* Date block */}
+              {/* Date card with enhanced hover states and smooth transitions */}
               <div className="flex items-start gap-3 sm:block sm:shrink-0">
                 <div className={cn(
-                  "w-12 h-12 sm:w-12 sm:h-12 rounded-xl flex flex-col items-center justify-center shrink-0 border",
+                  "w-auto min-w-16 h-14 sm:w-auto sm:min-w-14 sm:h-14 rounded-lg flex items-center justify-center gap-2 px-3 shrink-0 border transition-all duration-300 ease-in-out transform hover:scale-105 cursor-pointer",
                   isToday(new Date(b.startDate))
-                    ? "bg-orange-500 border-orange-400"
-                    : "bg-stone-50 border-stone-200"
+                    ? "bg-gradient-to-br from-brand-500 to-brand-600 border-brand-400 shadow-lg"
+                    : "bg-gradient-to-br from-stone-50 to-stone-100 border-stone-200 shadow-md hover:shadow-lg hover:from-stone-50 hover:to-stone-200"
                 )}>
-                  <span className={cn(
-                    "text-[10px] font-bold uppercase leading-none",
-                    isToday(new Date(b.startDate)) ? "text-orange-100" : "text-stone-400"
-                  )}>
-                    {format(new Date(b.startDate), "MMM", { locale: idLocale })}
-                  </span>
-                  <span className={cn(
-                    "text-base sm:text-lg font-bold leading-tight",
-                    isToday(new Date(b.startDate)) ? "text-white" : "text-stone-800"
-                  )}>
-                    {new Date(b.startDate).getDate()}
-                  </span>
+                  {(() => {
+                    const startDate = new Date(b.startDate);
+                    const endDate = b.endDate ? new Date(b.endDate) : null;
+                    const isSameDate = endDate && startDate.toDateString() === endDate.toDateString();
+                    
+                    return (
+                      <div className="flex flex-col items-center">
+                        <span className={cn(
+                          "text-xs font-bold uppercase tracking-wider leading-none transition-colors duration-200 mb-1",
+                          isToday(startDate) ? "text-brand-100" : "text-stone-600"
+                        )}>
+                          {format(startDate, "MMM", { locale: idLocale })}
+                        </span>
+                        <span className={cn(
+                          "text-base font-bold leading-none tracking-tight transition-colors duration-200",
+                          isToday(startDate) ? "text-white" : "text-stone-900"
+                        )}>
+                          {isSameDate ? startDate.getDate() : `${startDate.getDate()}-${endDate?.getDate()}`}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Main content - shown inline on mobile next to date */}
@@ -360,23 +371,26 @@ function ListView({
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    {b.eventType.slice(0, 2).map((et) => (
+                    {eventTypes.slice(0, 2).map((et) => (
                       <span
-                        key={et}
-                        className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", EVENT_TYPE_COLORS[et] ?? "bg-stone-100 text-stone-600")}
+                        key={et.id}
+                        className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", EVENT_TYPE_COLORS[et.name] ?? "bg-stone-100 text-stone-600")}
                       >
-                        {et === "TAMAT_KAJI" ? "Tamat Kaji" : et.charAt(0) + et.slice(1).toLowerCase()}
+                        {et.label}
                       </span>
                     ))}
-                    {b.eventType.length > 2 && (
-                      <span className="text-[10px] text-stone-400">+{b.eventType.length - 2}</span>
+                    {eventTypes.length > 2 && (
+                      <span className="text-[10px] text-stone-400">+{eventTypes.length - 2}</span>
+                    )}
+                    {b.location && <span className="text-xs text-stone-400">📍 {b.location}</span>}
+                    {b.hashtag && (
+                      <span className="text-[11px] text-stone-400 font-medium truncate max-w-24">{b.hashtag}</span>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Main content - desktop only */}
-              <div className="hidden sm:block flex-1 min-w-0">
+                <div className="hidden sm:block flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-stone-900 text-sm">{b.clientName}</span>
                   {b.isConfirmed && (
@@ -386,13 +400,13 @@ function ListView({
                     <span className="text-[11px] text-stone-400 font-medium truncate max-w-24 sm:max-w-32">{b.hashtag}</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  {b.eventType.map((et) => (
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  {eventTypes.map((et) => (
                     <span
-                      key={et}
-                      className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", EVENT_TYPE_COLORS[et] ?? "bg-stone-100 text-stone-600")}
+                      key={et.id}
+                      className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", EVENT_TYPE_COLORS[et.name] ?? "bg-stone-100 text-stone-600")}
                     >
-                      {et === "TAMAT_KAJI" ? "Tamat Kaji" : et.charAt(0) + et.slice(1).toLowerCase()}
+                      {et.label}
                     </span>
                   ))}
                   {b.location && <span className="text-xs text-stone-400">📍 {b.location}</span>}
@@ -443,7 +457,7 @@ function ListView({
                 </div>
                 {/* Bottom: price and payment status */}
                 <div className="flex items-center gap-2 sm:flex-col sm:items-end sm:gap-0">
-                  <p className="text-sm font-bold text-stone-900">Rp {b.package.toLocaleString("id-ID")}</p>
+                  <p className="text-sm font-bold text-stone-900">Rp {packagePrice.toLocaleString("id-ID")}</p>
                   <span className={cn("text-[11px] font-medium px-1.5 py-0.5 rounded-full", pay.color)}>
                     {pay.label}
                   </span>
@@ -482,17 +496,17 @@ function CalendarView({
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-stone-100 gap-3">
-        <h2 className="font-bold text-stone-900 text-sm">
+      <div className="flex flex-row items-center justify-between px-3 sm:px-5 py-3 sm:py-4 border-b border-stone-100 gap-2">
+        <h2 className="font-bold text-stone-900 text-sm shrink-0">
           {format(calendarDate, "MMMM yyyy", { locale: idLocale })}
         </h2>
-        <div className="flex items-center gap-2">
-          <button onClick={onToday} className="btn btn-secondary text-xs py-1.5 px-3">Hari ini</button>
-          <button onClick={onPrev} className="btn btn-ghost w-8 h-8 p-0 justify-center">
-            <ChevronLeft size={15} />
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button onClick={onToday} className="btn btn-secondary text-xs py-1.5 px-2 sm:px-3">Hari ini</button>
+          <button onClick={onPrev} className="btn btn-primary w-9 h-9 p-0 flex items-center justify-center shrink-0" aria-label="Previous month">
+            <span className="flex items-center justify-center text-white"><ChevronLeft size={20} strokeWidth={2.5} /></span>
           </button>
-          <button onClick={onNext} className="btn btn-ghost w-8 h-8 p-0 justify-center">
-            <ChevronRight size={15} />
+          <button onClick={onNext} className="btn btn-primary w-9 h-9 p-0 flex items-center justify-center shrink-0" aria-label="Next month">
+            <span className="flex items-center justify-center text-white"><ChevronRight size={20} strokeWidth={2.5} /></span>
           </button>
         </div>
       </div>

@@ -73,3 +73,27 @@ export function getDaysUntil(date: Date | string): number {
   d.setHours(0, 0, 0, 0);
   return Math.round((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
+
+export function formatDateRange(startDate: Date | string | null | undefined, endDate: Date | string | null | undefined): string {
+  if (!startDate) return "-";
+  
+  const start = typeof startDate === "string" ? parseISO(startDate) : startDate;
+  if (!isValid(start)) return "-";
+  
+  if (!endDate) {
+    return format(start, "dd MMM yyyy", { locale: idLocale });
+  }
+  
+  const end = typeof endDate === "string" ? parseISO(endDate) : endDate;
+  if (!isValid(end)) {
+    return format(start, "dd MMM yyyy", { locale: idLocale });
+  }
+  
+  // Check if dates are the same
+  if (start.toDateString() === end.toDateString()) {
+    return format(start, "dd MMM yyyy", { locale: idLocale });
+  }
+  
+  // Different dates - show range
+  return `${format(start, "dd MMM", { locale: idLocale })} s.d ${format(end, "dd MMM yyyy", { locale: idLocale })}`;
+}

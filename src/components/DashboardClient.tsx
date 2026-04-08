@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { formatDate, formatCurrency, getStatusColor, getStatusLabel, getDaysUntil } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { BookingWithRelations } from "@/types";
 
 interface Props {
   stats: {
@@ -17,17 +18,7 @@ interface Props {
     completedCount: number;
     pendingCount: number;
   };
-  upcomingBookings: Array<{
-    id: string;
-    clientName: string;
-    startDate: Date | string;
-    endDate: Date | string | null;
-    status: string;
-    package: number;
-    paid: number;
-    location: string | null;
-    eventType: string[];
-  }>;
+  upcomingBookings: BookingWithRelations[];
 }
 
 export default function DashboardClient({ stats, upcomingBookings }: Props) {
@@ -133,35 +124,61 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
             ) : (
               upcomingBookings.map((b) => {
                 const days = getDaysUntil(b.startDate);
-                const sisa = b.package - b.paid;
+                const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+                const packagePrice = b.pricePackage?.price || 0;
+                const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+                const transport = b.transport || 0;
+                const discount = b.discount || 0;
+                const totalPrice = Math.max(0, packagePrice + addOnsTotal + transport - discount);
+                const sisa = totalPrice - totalPaid;
                 return (
                   <Link key={b.id} href={`/dashboard/bookings?id=${b.id}`}
-                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-stone-50 transition-colors">
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex flex-col items-center justify-center shrink-0 border border-orange-100">
-                      <span className="text-[10px] font-bold text-orange-500 uppercase leading-none">
+                    className="flex items-start sm:items-center gap-3 px-3 sm:px-5 py-3.5 hover:bg-stone-50 transition-colors">
+                    {/* Date badge - smaller on mobile */}
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-orange-50 flex flex-col items-center justify-center shrink-0 border border-orange-100">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-orange-500 uppercase leading-none">
                         {new Date(b.startDate).toLocaleString("id-ID", { month: "short" })}
                       </span>
-                      <span className="text-base font-bold text-orange-700 leading-tight">
+                      <span className="text-sm sm:text-base font-bold text-orange-700 leading-tight">
                         {new Date(b.startDate).getDate()}
                       </span>
                     </div>
+                    
+                    {/* Main content - better truncation for mobile */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold text-stone-900 truncate">{b.clientName}</p>
-                      <p className="text-sm text-stone-500 truncate">
-                        {b.location ?? "—"} · {b.eventType.map(e => e.charAt(0) + e.slice(1).toLowerCase()).join(", ")}
-                      </p>
+                      <p className="text-sm sm:text-base font-semibold text-stone-900 truncate">{b.clientName}</p>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs sm:text-sm text-stone-500">
+                        {b.location && (
+                          <span className="truncate max-w-[120px] sm:max-w-[200px]">{b.location}</span>
+                        )}
+                        {b.location && (b.bookingEventTypes?.length ?? 0) > 0 && (
+                          <span className="text-stone-300">·</span>
+                        )}
+                        {b.bookingEventTypes && b.bookingEventTypes.length > 0 && (
+                          <span className="truncate max-w-[150px] sm:max-w-[250px]">
+                            {b.bookingEventTypes.map((bet) => bet.eventType.label).join(", ")}
+                          </span>
+                        )}
+                        {!b.location && (!b.bookingEventTypes || b.bookingEventTypes.length === 0) && (
+                          <span>—</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
+                    
+                    {/* Right side - stacked on mobile */}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
                       <span className={cn(
-                        "text-xs font-medium px-2.5 py-1 rounded-full",
+                        "text-[10px] sm:text-xs font-medium px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full whitespace-nowrap",
                         days <= 0 ? "bg-red-50 text-red-600" :
                         days <= 7 ? "bg-amber-50 text-amber-600" :
                         "bg-stone-100 text-stone-600"
                       )}>
-                        {days <= 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h lagi`}
+                        {days <= 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h`}
                       </span>
                       {sisa > 0 && (
-                        <p className="text-xs text-red-500 mt-1 font-medium">Sisa Rp{sisa.toLocaleString("id-ID")}</p>
+                        <p className="text-[10px] sm:text-xs text-red-500 font-medium whitespace-nowrap">
+                          Sisa Rp{sisa.toLocaleString("id-ID")}
+                        </p>
                       )}
                     </div>
                   </Link>

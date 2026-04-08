@@ -12,6 +12,13 @@ export async function GET() {
 
     const packages = await prisma.pricePackage.findMany({
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      include: {
+        packageEventTypes: {
+          include: {
+            eventType: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(packages);
@@ -28,15 +35,30 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
+    const { eventTypeIds, ...packageData } = body;
     
     const pkg = await prisma.pricePackage.create({
       data: {
-        name: body.name,
-        price: body.price,
-        eventTypes: body.eventTypes || [],
-        description: body.description || null,
-        isActive: body.isActive ?? true,
-        sortOrder: body.sortOrder ?? 0,
+        name: packageData.name,
+        price: packageData.price,
+        description: packageData.description || null,
+        isActive: packageData.isActive ?? true,
+        sortOrder: packageData.sortOrder ?? 0,
+        // Create event type relations if provided
+        ...(eventTypeIds && eventTypeIds.length > 0 && {
+          packageEventTypes: {
+            create: eventTypeIds.map((eventTypeId: string) => ({
+              eventTypeId,
+            })),
+          },
+        }),
+      },
+      include: {
+        packageEventTypes: {
+          include: {
+            eventType: true,
+          },
+        },
       },
     });
 

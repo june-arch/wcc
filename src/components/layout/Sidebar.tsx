@@ -8,12 +8,14 @@ import {
   Camera,
   BarChart3,
   Settings,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/bookings", label: "Booking", icon: CalendarDays },
+  { href: "/dashboard/price-list", label: "Master Data", icon: Database },
   { href: "/dashboard/finance", label: "Keuangan", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Pengaturan", icon: Settings },
 ];

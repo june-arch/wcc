@@ -2,35 +2,57 @@
 // src/components/FinanceClient.tsx
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown, Banknote, AlertCircle, CheckCircle2 } from "lucide-react";
-import { cn, formatDate, getPaymentStatus } from "@/lib/utils";
+import { cn, formatDate, formatDateRange, getPaymentStatus } from "@/lib/utils";
 
-type BookingFinance = {
-  id: string;
-  clientName: string;
-  hashtag: string | null;
-  package: number;
-  paid: number;
-  startDate: string;
-  status: string;
-  eventType: string[];
-  payments: { id: string; amount: number; note: string | null; paidAt: string }[];
-};
+import type { BookingWithRelations } from "@/types";
 
-export default function FinanceClient({ bookings }: { bookings: BookingFinance[] }) {
+interface Props {
+  bookings: BookingWithRelations[];
+}
+
+export default function FinanceClient({ bookings }: Props) {
   const stats = useMemo(() => {
-    const totalPackage = bookings.reduce((s, b) => s + b.package, 0);
-    const totalPaid = bookings.reduce((s, b) => s + b.paid, 0);
+    // Calculate totals using new schema
+    let totalPackage = 0;
+    let totalPaid = 0;
+    let lunas = 0;
+    let belumLunas = 0;
+
+    bookings.forEach((b) => {
+      const packagePrice = b.pricePackage?.price || 0;
+      const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+      const transport = b.transport || 0;
+      const discount = b.discount || 0;
+      const totalPrice = Math.max(0, packagePrice + addOnsTotal + transport - discount);
+      const totalPaidBooking = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+
+      totalPackage += totalPrice;
+      totalPaid += totalPaidBooking;
+
+      if (totalPaidBooking >= totalPrice) {
+        lunas++;
+      } else {
+        belumLunas++;
+      }
+    });
+
     const totalUnpaid = totalPackage - totalPaid;
-    const lunas = bookings.filter((b) => b.paid >= b.package).length;
-    const belumLunas = bookings.filter((b) => b.paid < b.package).length;
 
     // Month breakdown
     const byMonth: Record<string, { package: number; paid: number; count: number }> = {};
     bookings.forEach((b) => {
       const key = new Date(b.startDate).toLocaleDateString("id-ID", { year: "numeric", month: "long" });
       if (!byMonth[key]) byMonth[key] = { package: 0, paid: 0, count: 0 };
-      byMonth[key].package += b.package;
-      byMonth[key].paid += b.paid;
+
+      const packagePrice = b.pricePackage?.price || 0;
+      const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+      const transport = b.transport || 0;
+      const discount = b.discount || 0;
+      const totalPrice = Math.max(0, packagePrice + addOnsTotal + transport - discount);
+      const totalPaidBooking = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+
+      byMonth[key].package += totalPrice;
+      byMonth[key].paid += totalPaidBooking;
       byMonth[key].count++;
     });
 
@@ -149,7 +171,14 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
               </thead>
               <tbody className="divide-y divide-stone-50">
                 {bookings.map((b) => {
-                  const sisa = b.package - b.paid;
+                  const packagePrice = b.pricePackage?.price || 0;
+                  const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+                  const transport = b.transport || 0;
+                  const discount = b.discount || 0;
+                  const totalPrice = Math.max(0, packagePrice + addOnsTotal + transport - discount);
+                  const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+                  const sisa = totalPrice - totalPaid;
+
                   return (
                     <tr key={b.id} className="table-row">
                       <td className="px-4 py-3">
@@ -157,10 +186,10 @@ export default function FinanceClient({ bookings }: { bookings: BookingFinance[]
                         <p className="text-xs text-stone-400">{formatDate(b.startDate)}</p>
                       </td>
                       <td className="px-4 py-3 text-right text-stone-700 font-medium">
-                        {b.package.toLocaleString("id-ID")}
+                        {totalPrice.toLocaleString("id-ID")}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-emerald-600">
-                        {b.paid.toLocaleString("id-ID")}
+                        {totalPaid.toLocaleString("id-ID")}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {sisa > 0 ? (

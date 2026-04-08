@@ -8,6 +8,9 @@ export default async function BookingsPage() {
   const bookings = await prisma.booking.findMany({
     include: {
       payments: { orderBy: { paidAt: "desc" } },
+      pricePackage: true,
+      bookingAddOns: { include: { addOn: true } },
+      bookingEventTypes: { include: { eventType: true } },
       createdBy: { select: { name: true, email: true } },
     },
     orderBy: { startDate: "asc" },

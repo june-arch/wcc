@@ -1,17 +1,19 @@
 "use client";
 // src/components/PriceListClient.tsx
 import { useState } from "react";
-import { Plus, Pencil, Trash2, Package, Sparkles, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Sparkles, GripVertical, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ResponsiveModal from "./ui/ResponsiveModal";
 import ResponsiveConfirm from "./ui/ResponsiveConfirm";
 import { FormattedNumberInput } from "./ui/FormattedNumberInput";
-import type { PricePackage, AddOn } from "@/types";
+import EventTypesClient from "./EventTypesClient";
+import type { PricePackage, AddOn, EventType } from "@/types";
 import toast from "react-hot-toast";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   PENGAJIAN: "Pengajian",
-  AKAD: "Akad",
+  AKAD_MALAM: "Akad Malam",
+  AKAD_SIANG: "Akad Siang",
   RESEPSI: "Resepsi",
   TAMAT_KAJI: "Tamat Kaji",
   LAINNYA: "Lainnya",
@@ -20,12 +22,13 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 interface Props {
   initialPackages: PricePackage[];
   initialAddOns: AddOn[];
+  initialEventTypes: EventType[];
 }
 
-export default function PriceListClient({ initialPackages, initialAddOns }: Props) {
+export default function PriceListClient({ initialPackages, initialAddOns, initialEventTypes }: Props) {
   const [packages, setPackages] = useState<PricePackage[]>(initialPackages);
   const [addOns, setAddOns] = useState<AddOn[]>(initialAddOns);
-  const [activeTab, setActiveTab] = useState<"packages" | "addons">("packages");
+  const [activeTab, setActiveTab] = useState<"packages" | "addons" | "eventtypes">("packages");
   const [savingPackage, setSavingPackage] = useState(false);
   const [savingAddOn, setSavingAddOn] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -87,7 +90,7 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
     setPackageForm({
       name: pkg.name,
       price: pkg.price.toString(),
-      eventTypes: pkg.eventTypes,
+      eventTypes: pkg.packageEventTypes?.map(pet => pet.eventType.id) || [],
       description: pkg.description || "",
       isActive: pkg.isActive,
       sortOrder: pkg.sortOrder.toString(),
@@ -300,9 +303,9 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-stone-900">Master Data Price List</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-stone-900">Master Data</h1>
           <p className="text-stone-500 text-sm mt-0.5">
-            Kelola paket harga dan add-ons untuk booking
+            Kelola paket harga, add-ons, dan jenis acara
           </p>
         </div>
       </div>
@@ -333,10 +336,24 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
           <Sparkles size={18} />
           Add-ons ({addOns.length})
         </button>
+        <button
+          onClick={() => setActiveTab("eventtypes")}
+          className={cn(
+            "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2",
+            activeTab === "eventtypes"
+              ? "text-orange-600 border-orange-500"
+              : "text-stone-500 border-transparent hover:text-stone-700"
+          )}
+        >
+          <Database size={18} />
+          Event Types
+        </button>
       </div>
 
       {/* Content */}
-      {activeTab === "packages" ? (
+      {activeTab === "eventtypes" ? (
+        <EventTypesClient eventTypes={initialEventTypes} />
+      ) : activeTab === "packages" ? (
         <div className="space-y-4">
           <div className="flex justify-end">
             <button
@@ -406,12 +423,12 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
                 </div>
 
                 <div className="flex flex-wrap gap-1 mt-3">
-                  {pkg.eventTypes.map((et) => (
+                  {pkg.packageEventTypes?.map((pet) => (
                     <span
-                      key={et}
+                      key={pet.eventType.id}
                       className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-orange-50 text-orange-600"
                     >
-                      {EVENT_TYPE_LABELS[et] || et}
+                      {pet.eventType.label}
                     </span>
                   ))}
                 </div>
@@ -585,19 +602,19 @@ export default function PriceListClient({ initialPackages, initialAddOns }: Prop
               Jenis Acara
             </label>
             <div className="flex gap-2 flex-wrap">
-              {Object.entries(EVENT_TYPE_LABELS).map(([key, label]) => (
+              {initialEventTypes.filter(et => et.isActive).map((eventType) => (
                 <button
-                  key={key}
+                  key={eventType.id}
                   type="button"
-                  onClick={() => toggleEventType(key)}
+                  onClick={() => toggleEventType(eventType.id)}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-medium border transition-all",
-                    packageForm.eventTypes.includes(key)
+                    packageForm.eventTypes.includes(eventType.id)
                       ? "bg-orange-50 border-orange-300 text-orange-700"
                       : "border-stone-200 text-stone-500 hover:border-stone-300"
                   )}
                 >
-                  {label}
+                  {eventType.label}
                 </button>
               ))}
             </div>

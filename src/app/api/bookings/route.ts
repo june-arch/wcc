@@ -40,6 +40,12 @@ export async function GET(req: NextRequest) {
             addOn: true,
           },
         },
+        bookingEventTypes: {
+          include: {
+            eventType: true,
+          },
+        },
+        pricePackage: true,
         createdBy: { select: { name: true, email: true } },
       },
       orderBy: { startDate: "asc" },
@@ -58,17 +64,13 @@ export async function POST(req: NextRequest) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { addOns, ...bookingData } = body;
+    const { addOns, eventTypeIds, initialPayment, ...bookingData } = body;
     
     const booking = await prisma.booking.create({
       data: {
         clientName: bookingData.clientName,
         hashtag: bookingData.hashtag,
-        package: bookingData.package,
-        dp: bookingData.dp,
-        paid: bookingData.paid,
         location: bookingData.location,
-        eventType: bookingData.eventType,
         startDate: new Date(bookingData.startDate),
         endDate: bookingData.endDate ? new Date(bookingData.endDate) : null,
         status: bookingData.status,
@@ -78,6 +80,14 @@ export async function POST(req: NextRequest) {
         discount: bookingData.discount || 0,
         pricePackageId: bookingData.pricePackageId,
         createdById: session.user.id,
+        // Create event types if provided
+        ...(eventTypeIds && eventTypeIds.length > 0 && {
+          bookingEventTypes: {
+            create: eventTypeIds.map((eventTypeId: string) => ({
+              eventTypeId,
+            })),
+          },
+        }),
         // Create add-ons if provided
         ...(addOns && addOns.length > 0 && {
           bookingAddOns: {
@@ -85,6 +95,16 @@ export async function POST(req: NextRequest) {
               addOnId: a.addOnId,
               price: a.price,
             })),
+          },
+        }),
+        // Create initial payment if provided
+        ...(initialPayment && initialPayment > 0 && {
+          payments: {
+            create: {
+              amount: initialPayment,
+              paidAt: new Date(),
+              notes: "DP/ Pembayaran pertama",
+            },
           },
         }),
       },
@@ -95,6 +115,12 @@ export async function POST(req: NextRequest) {
             addOn: true,
           },
         },
+        bookingEventTypes: {
+          include: {
+            eventType: true,
+          },
+        },
+        pricePackage: true,
       },
     });
 

@@ -38,7 +38,7 @@ export default function ResponsiveModal({
       </div>
 
       {/* Content - Scrollable */}
-      <div className="h-[calc(100vh-60px)] overflow-y-auto p-4 pb-8">
+      <div className="h-[calc(100vh-60px)] overflow-y-auto p-4 pb-32">
         {children}
       </div>
     </div>

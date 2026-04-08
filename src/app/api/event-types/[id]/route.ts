@@ -1,10 +1,10 @@
-// src/app/api/price-packages/[id]/route.ts
+// src/app/api/event-types/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-// GET - Get single price package
+// GET - Get single event type
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -14,19 +14,19 @@ export async function GET(
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const pkg = await prisma.pricePackage.findUnique({
+    const eventType = await prisma.eventType.findUnique({
       where: { id },
     });
 
-    if (!pkg) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(pkg);
+    if (!eventType) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(eventType);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// PATCH - Update price package
+// PATCH - Update event type
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -38,49 +38,25 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
-    // Update package with event types if provided
-    const updateData: any = {
-      name: body.name,
-      price: body.price,
-      description: body.description,
-      isActive: body.isActive,
-      sortOrder: body.sortOrder,
-    };
-
-    // Handle event types relation
-    if (body.eventTypes !== undefined && Array.isArray(body.eventTypes)) {
-      // Validate that eventTypeIds exist in database
-      const validEventTypes = await prisma.eventType.findMany({
-        where: { id: { in: body.eventTypes } },
-        select: { id: true },
-      });
-      const validIds = validEventTypes.map((et) => et.id);
-
-      // Delete existing relations and create new ones with only valid IDs
-      updateData.packageEventTypes = {
-        deleteMany: {},
-        create: validIds.map((eventTypeId: string) => ({
-          eventTypeId,
-        })),
-      };
-    }
-
-    const pkg = await prisma.pricePackage.update({
+    const eventType = await prisma.eventType.update({
       where: { id },
-      data: updateData,
-      include: {
-        packageEventTypes: { include: { eventType: true } },
+      data: {
+        name: body.name,
+        label: body.label,
+        description: body.description,
+        isActive: body.isActive,
+        sortOrder: body.sortOrder,
       },
     });
 
-    return NextResponse.json(pkg);
+    return NextResponse.json(eventType);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// DELETE - Delete price package
+// DELETE - Delete event type
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -90,7 +66,7 @@ export async function DELETE(
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    await prisma.pricePackage.delete({ where: { id } });
+    await prisma.eventType.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

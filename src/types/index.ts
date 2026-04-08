@@ -3,11 +3,7 @@ export type BookingWithRelations = {
   id: string;
   clientName: string;
   hashtag: string | null;
-  package: number;
-  dp: number;
-  paid: number;
   location: string | null;
-  eventType: string[];
   startDate: Date | string;
   endDate: Date | string | null;
   status: string;
@@ -15,10 +11,13 @@ export type BookingWithRelations = {
   isConfirmed: boolean;
   transport: number;
   discount: number;
+  pricePackageId: string | null;
+  pricePackage: PricePackage | null;
   createdAt: Date | string;
   updatedAt: Date | string;
   payments: Payment[];
   bookingAddOns?: BookingAddOn[];
+  bookingEventTypes?: BookingEventType[];
   createdBy?: { name: string; email: string } | null;
 };
 
@@ -40,16 +39,43 @@ export type CalendarDay = {
 export type ViewMode = "list" | "calendar";
 export type FilterStatus = "ALL" | "PENDING" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
-export type PricePackage = {
+export type EventType = {
   id: string;
   name: string;
-  price: number;
-  eventTypes: string[];
+  label: string;
   description: string | null;
   isActive: boolean;
   sortOrder: number;
   createdAt: Date | string;
   updatedAt: Date | string;
+};
+
+export type PricePackage = {
+  id: string;
+  name: string;
+  price: number;
+  description: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  packageEventTypes?: PackageEventType[];
+};
+
+export type PackageEventType = {
+  id: string;
+  pricePackageId: string;
+  eventTypeId: string;
+  eventType: EventType;
+  createdAt: Date | string;
+};
+
+export type BookingEventType = {
+  id: string;
+  bookingId: string;
+  eventTypeId: string;
+  eventType: EventType;
+  createdAt: Date | string;
 };
 
 export type AddOn = {

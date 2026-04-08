@@ -5,14 +5,15 @@ import {
   MapPin, Calendar, Tag, CreditCard,
   Plus, Loader2, ArrowLeft, Pencil,
 } from "lucide-react";
-import { cn, formatDate, getStatusColor, getStatusLabel, getPaymentStatus } from "@/lib/utils";
+import { cn, formatDate, formatDateRange, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil } from "@/lib/utils";
 import { FormattedNumberInput } from "./ui/FormattedNumberInput";
 import type { BookingWithRelations, Payment } from "@/types";
 import toast from "react-hot-toast";
 
 const EVENT_COLORS: Record<string, string> = {
   PENGAJIAN: "bg-purple-100 text-purple-700 border-purple-200",
-  AKAD:      "bg-blue-100 text-blue-700 border-blue-200",
+  AKAD_MALAM: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  AKAD_SIANG: "bg-cyan-100 text-cyan-700 border-cyan-200",
   RESEPSI:   "bg-pink-100 text-pink-700 border-pink-200",
   TAMAT_KAJI:"bg-teal-100 text-teal-700 border-teal-200",
   LAINNYA:   "bg-stone-100 text-stone-600 border-stone-200",
@@ -30,9 +31,16 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
   const [addingPayment, setAddingPayment] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
-  const sisa = booking.package - booking.paid;
-  const pay = getPaymentStatus(booking.paid, booking.package);
-  const progress = Math.min(Math.round((booking.paid / booking.package) * 100), 100);
+  // Calculate totals from new schema
+  const packagePrice = booking.pricePackage?.price || 0;
+  const addOnsTotal = booking.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+  const transport = booking.transport || 0;
+  const discount = booking.discount || 0;
+  const totalPrice = Math.max(0, packagePrice + addOnsTotal + transport - discount);
+  const totalPaid = booking.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+  const sisa = totalPrice - totalPaid;
+  const progress = totalPrice > 0 ? Math.min(Math.round((totalPaid / totalPrice) * 100), 100) : 0;
+  const pay = getPaymentStatus(totalPaid, totalPrice);
 
   // ─── Status ────────────────────────────────────────────────────────────────
   const handleUpdateStatus = async (status: string) => {
@@ -62,8 +70,8 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
     const amount = parseInt(newPayment);
     if (!amount || amount <= 0 || addingPayment) return;
     setAddingPayment(true);
-    const newPaid = booking.paid + amount;
-    const newStatus = newPaid >= booking.package ? "COMPLETED" : booking.status;
+    const newTotalPaid = totalPaid + amount;
+    const newStatus = newTotalPaid >= totalPrice ? "COMPLETED" : booking.status;
     // Optimistic
     const tempPayment: Payment = {
       id: `temp-${Date.now()}`,
@@ -73,9 +81,8 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
       paidAt: new Date().toISOString(),
     };
     onPatch(booking.id, {
-      paid: newPaid,
+      payments: [tempPayment, ...(booking.payments || [])],
       status: newStatus,
-      payments: [tempPayment, ...booking.payments],
     });
     setNewPayment("");
     try {
@@ -87,15 +94,14 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
       if (!res.ok) throw new Error();
       const saved: Payment = await res.json();
       onPatch(booking.id, {
-        payments: [saved, ...booking.payments.filter((p) => p.id !== tempPayment.id)],
+        payments: [saved, ...(booking.payments || []).filter((p) => p.id !== tempPayment.id)],
       });
       toast.success(`Pembayaran Rp${amount.toLocaleString("id-ID")} dicatat`);
     } catch {
       // Rollback
       onPatch(booking.id, {
-        paid: booking.paid,
+        payments: (booking.payments || []).filter((p) => p.id !== tempPayment.id),
         status: booking.status,
-        payments: booking.payments.filter((p) => p.id !== tempPayment.id),
       });
       toast.error("Gagal catat pembayaran");
     } finally {
@@ -145,9 +151,9 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
           </div>
         </div>
         <div className="flex gap-1 mt-2 flex-wrap">
-          {booking.eventType.map((et) => (
-            <span key={et} className={cn("badge text-[10px]", EVENT_COLORS[et])}>
-              {et === "TAMAT_KAJI" ? "Tamat Kaji" : et.charAt(0) + et.slice(1).toLowerCase()}
+          {booking.bookingEventTypes?.map((bet) => (
+            <span key={bet.eventType.id} className={cn("badge text-[10px]", EVENT_COLORS[bet.eventType.name] || "bg-stone-100 text-stone-600 border-stone-200")}>
+              {bet.eventType.label}
             </span>
           ))}
         </div>
@@ -179,9 +185,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
           <div className="p-4 space-y-4">
             <InfoRow icon={Calendar} label="Tanggal">
               <span className="text-sm font-medium text-stone-800">
-                {formatDate(booking.startDate)}
-                {booking.endDate &&
-                  ` – ${formatDate(booking.endDate)}`}
+                {formatDateRange(booking.startDate, booking.endDate)}
               </span>
             </InfoRow>
 
@@ -193,7 +197,10 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
 
             <InfoRow icon={CreditCard} label="Paket">
               <div>
-                <p className="text-sm font-bold text-stone-900">Rp {booking.package.toLocaleString("id-ID")}</p>
+                <p className="text-sm font-bold text-stone-900">Rp {totalPrice.toLocaleString("id-ID")}</p>
+                {booking.pricePackage && (
+                  <p className="text-xs text-stone-500">{booking.pricePackage.name}</p>
+                )}
                 <div className="progress-bar mt-1.5">
                   <div className="progress-fill" style={{ width: `${progress}%` }} />
                 </div>
@@ -241,11 +248,35 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
             <div className="bg-stone-50 rounded-xl p-4 space-y-2 border border-stone-100">
               <div className="flex justify-between text-sm">
                 <span className="text-stone-500">Total Paket</span>
-                <span className="font-semibold text-stone-900">Rp {booking.package.toLocaleString("id-ID")}</span>
+                <span className="font-semibold text-stone-900">Rp {totalPrice.toLocaleString("id-ID")}</span>
               </div>
+              {booking.pricePackage && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-400 text-xs">{booking.pricePackage.name}</span>
+                  <span className="text-stone-400 text-xs">Rp {packagePrice.toLocaleString("id-ID")}</span>
+                </div>
+              )}
+              {addOnsTotal > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-400 text-xs">Add-ons</span>
+                  <span className="text-stone-400 text-xs">+Rp {addOnsTotal.toLocaleString("id-ID")}</span>
+                </div>
+              )}
+              {transport > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-400 text-xs">Transport</span>
+                  <span className="text-stone-400 text-xs">+Rp {transport.toLocaleString("id-ID")}</span>
+                </div>
+              )}
+              {discount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-400 text-xs">Diskon</span>
+                  <span className="text-stone-400 text-xs">-Rp {discount.toLocaleString("id-ID")}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-stone-500">Sudah Dibayar</span>
-                <span className="font-semibold text-emerald-600">Rp {booking.paid.toLocaleString("id-ID")}</span>
+                <span className="font-semibold text-emerald-600">Rp {totalPaid.toLocaleString("id-ID")}</span>
               </div>
               <div className="border-t border-stone-200 pt-2 flex justify-between text-sm">
                 <span className="font-semibold text-stone-600">Sisa</span>

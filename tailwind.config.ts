@@ -14,7 +14,7 @@ const config: Config = {
       },
       colors: {
         brand: {
-          50:  "#FFF7ED",
+          50: "#FFF7ED",
           100: "#FFEDD5",
           200: "#FED7AA",
           300: "#FDBA74",
@@ -24,6 +24,18 @@ const config: Config = {
           700: "#C2570C",
           800: "#9A3E0A",
           900: "#7C3009",
+        },
+        stone: {
+          50: "#FAFAF9",
+          100: "#F5F5F4",
+          200: "#E7E5E4",
+          300: "#D4D4D8",
+          400: "#A8A29E",
+          500: "#737374",
+          600: "#475569",
+          700: "#292524",
+          800: "#1C1917",
+          900: "#0F172A",
         },
         surface: {
           DEFAULT: "#FAFAF9",

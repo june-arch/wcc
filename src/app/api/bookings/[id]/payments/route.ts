@@ -25,15 +25,31 @@ export async function POST(
       },
     });
 
-    // Update paid total on booking
-    const booking = await prisma.booking.findUnique({ where: { id } });
+    // Fetch booking with relations to calculate totals
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: {
+        pricePackage: true,
+        bookingAddOns: true,
+        payments: true,
+      },
+    });
+
     if (booking) {
-      const newPaid = booking.paid + body.amount;
+      // Calculate totals
+      const packagePrice = booking.pricePackage?.price || 0;
+      const addOnsTotal = booking.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+      const transport = booking.transport || 0;
+      const discount = booking.discount || 0;
+      const totalPrice = Math.max(0, packagePrice + addOnsTotal + transport - discount);
+      
+      const totalPaid = booking.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+      
+      // Update status if fully paid
       await prisma.booking.update({
         where: { id },
         data: {
-          paid: newPaid,
-          status: newPaid >= booking.package ? "COMPLETED" : booking.status,
+          status: totalPaid >= totalPrice ? "COMPLETED" : booking.status,
         },
       });
     }

@@ -75,11 +75,7 @@ model Booking {
   id            String        @id @default(cuid())
   clientName    String
   hashtag       String?
-  package       Int           // price in thousands (e.g. 800 = 800k)
-  dp            Int           @default(0) // down payment
-  paid          Int           @default(0) // total paid
   location      String?
-  eventType     EventType[]
   startDate     DateTime
   endDate       DateTime?
   status        BookingStatus @default(PENDING)
@@ -95,23 +91,64 @@ model Booking {
   createdBy     User?         @relation("CreatedBy", fields: [createdById], references: [id])
   payments      Payment[]
   bookingAddOns BookingAddOn[]
+  bookingEventTypes BookingEventType[]
 
   @@map("bookings")
 }
 
-model PricePackage {
-  id          String    @id @default(cuid())
-  name        String    // e.g. "Akad & Resepsi (Hari Sama)"
-  price       Int       // in thousands
-  eventTypes  EventType[] // which event types this covers
+model EventType {
+  id          String         @id @default(cuid())
+  name        String         // e.g. "Pengajian"
+  label       String         // e.g. "Pengajian" (display name)
   description String?
-  isActive    Boolean   @default(true)
-  sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isActive    Boolean        @default(true)
+  sortOrder   Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  bookingEventTypes BookingEventType[]
+  packageEventTypes PackageEventType[]
+
+  @@map("event_types")
+}
+
+model PricePackage {
+  id          String      @id @default(cuid())
+  name        String      // e.g. "Akad & Resepsi (Hari Sama)"
+  price       Int         // in thousands
+  description String?
+  isActive    Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   bookings    Booking[]
+  packageEventTypes PackageEventType[]
 
   @@map("price_packages")
+}
+
+
+model BookingEventType {
+  id          String    @id @default(cuid())
+  bookingId   String
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  eventTypeId String
+  eventType   EventType @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([bookingId, eventTypeId])
+  @@map("booking_event_types")
+}
+
+model PackageEventType {
+  id             String       @id @default(cuid())
+  pricePackageId String
+  pricePackage   PricePackage @relation(fields: [pricePackageId], references: [id], onDelete: Cascade)
+  eventTypeId    String
+  eventType      EventType    @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([pricePackageId, eventTypeId])
+  @@map("package_event_types")
 }
 
 model AddOn {
@@ -149,14 +186,6 @@ model Payment {
   createdAt DateTime @default(now())
 
   @@map("payments")
-}
-
-enum EventType {
-  PENGAJIAN
-  AKAD
-  RESEPSI
-  TAMAT_KAJI
-  LAINNYA
 }
 
 enum BookingStatus {
