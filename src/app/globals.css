@@ -206,6 +206,16 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.02em; color: var(-
   min-height: 40px;
 }
 
+/* Prevent iOS auto-zoom on inputs - font-size must be >= 16px */
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select,
+  .input-base {
+    font-size: 16px !important;
+  }
+}
+
 /* Sidebar link touch targets */
 .sidebar-link {
   min-height: 44px;

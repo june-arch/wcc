@@ -26,26 +26,14 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // Format date for display
-  const todayFormatted = today.toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  
   // Filter bookings happening today (startDate is today, OR today is between start and end)
   const ongoingToday = upcomingBookings.filter((b) => {
     const start = new Date(b.startDate);
     start.setHours(0, 0, 0, 0);
     const end = b.endDate ? new Date(b.endDate) : new Date(start);
     end.setHours(0, 0, 0, 0);
-    const isOngoing = start.getTime() <= today.getTime() && today.getTime() <= end.getTime();
-    console.log("Check ongoing:", b.clientName, "start:", start.toISOString(), "today:", today.toISOString(), "isOngoing:", isOngoing);
-    return isOngoing;
+    return start.getTime() <= today.getTime() && today.getTime() <= end.getTime();
   });
-  
-  console.log("ongoingToday count:", ongoingToday.length, "upcomingBookings count:", upcomingBookings.length);
   
   // Filter upcoming to exclude ongoing today bookings
   const filteredUpcoming = upcomingBookings.filter((b) => {
@@ -143,29 +131,41 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
             
             {/* Quick list of today's bookings */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {ongoingToday.map((b) => (
-                <Link
-                  key={b.id}
-                  href={`/dashboard/bookings?id=${b.id}`}
-                  className="flex items-center gap-3 p-3 bg-white rounded-xl border border-purple-100 hover:border-purple-300 hover:shadow-sm transition-all"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-purple-50 flex flex-col items-center justify-center shrink-0 border border-purple-100">
-                    <span className="text-[10px] font-bold text-purple-500 uppercase">
-                      {new Date(b.startDate).toLocaleString("id-ID", { month: "short" })}
+              {ongoingToday.map((b) => {
+                const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+                const packagePrice = b.pricePackage?.price || 0;
+                const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
+                const transport = b.transport || 0;
+                const discount = b.discount || 0;
+                const totalPrice = Math.max(0, packagePrice + addOnsTotal + transport - discount);
+                const sisa = totalPrice - totalPaid;
+                return (
+                  <Link
+                    key={b.id}
+                    href={`/dashboard/bookings?id=${b.id}`}
+                    className="flex items-center gap-3 p-3 bg-white rounded-xl border border-purple-100 hover:border-purple-300 hover:shadow-sm transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-purple-50 flex flex-col items-center justify-center shrink-0 border border-purple-100">
+                      <span className="text-[10px] font-bold text-purple-500 uppercase">
+                        {new Date(b.startDate).toLocaleString("id-ID", { month: "short" })}
+                      </span>
+                      <span className="text-sm font-bold text-purple-700 leading-tight">
+                        {new Date(b.startDate).getDate()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-stone-900 text-sm truncate">{b.clientName}</p>
+                      <p className="text-[10px] text-emerald-600">Paid Rp{totalPaid.toLocaleString("id-ID")}</p>
+                      {sisa > 0 && (
+                        <p className="text-[10px] text-red-500">Unpaid Rp{sisa.toLocaleString("id-ID")}</p>
+                      )}
+                    </div>
+                    <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full whitespace-nowrap">
+                      Berjalan
                     </span>
-                    <span className="text-sm font-bold text-purple-700 leading-tight">
-                      {new Date(b.startDate).getDate()}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-stone-900 text-sm truncate">{b.clientName}</p>
-                    <p className="text-xs text-stone-500 truncate">{b.location || "—"}</p>
-                  </div>
-                  <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full whitespace-nowrap">
-                    Berjalan
-                  </span>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -245,9 +245,12 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
                       )}>
                         {days <= 0 ? "Hari ini" : days === 1 ? "Besok" : `${days}h`}
                       </span>
+                      <p className="text-[10px] sm:text-xs text-emerald-600 font-medium whitespace-nowrap">
+                        Paid Rp{totalPaid.toLocaleString("id-ID")}
+                      </p>
                       {sisa > 0 && (
                         <p className="text-[10px] sm:text-xs text-red-500 font-medium whitespace-nowrap">
-                          Sisa Rp{sisa.toLocaleString("id-ID")}
+                          Unpaid Rp{sisa.toLocaleString("id-ID")}
                         </p>
                       )}
                     </div>
