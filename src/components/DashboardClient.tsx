@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   CalendarDays, TrendingUp, CheckCircle2, Clock,
-  AlertCircle, ArrowRight, Camera, Banknote
+  AlertCircle, ArrowRight, Camera, Banknote, Play
 } from "lucide-react";
 import { formatDate, formatCurrency, getStatusColor, getStatusLabel, getDaysUntil } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,17 @@ interface Props {
 }
 
 export default function DashboardClient({ stats, upcomingBookings }: Props) {
+  // Filter bookings happening today (startDate <= today <= endDate)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const ongoingToday = upcomingBookings.filter((b) => {
+    const start = new Date(b.startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = b.endDate ? new Date(b.endDate) : start;
+    end.setHours(0, 0, 0, 0);
+    return start <= today && today <= end;
+  });
+
   const statCards = [
     {
       label: "Total Booking",
@@ -55,6 +66,15 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
       color: "bg-amber-50 text-amber-600",
       border: "border-amber-100",
     },
+    {
+      label: "Berjalan Hari Ini",
+      value: ongoingToday.length,
+      sub: ongoingToday.length > 0 ? `${ongoingToday.map(b => b.clientName.split(" ")[0]).join(", ")}` : "Tidak ada acara",
+      icon: Play,
+      color: "bg-purple-50 text-purple-600",
+      border: "border-purple-100",
+      highlight: ongoingToday.length > 0,
+    },
   ];
 
   return (
@@ -83,15 +103,15 @@ export default function DashboardClient({ stats, upcomingBookings }: Props) {
         ))}
       </div>
 
-      {/* Stats grid - Remaining cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4">
+      {/* Stats grid - Remaining cards (3 columns for cards 3-5) */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         {statCards.slice(2).map((card) => (
-          <div key={card.label} className={cn("card p-4 md:p-6 border", card.border)}>
+          <div key={card.label} className={cn("card p-4 md:p-6 border", card.border, "highlight" in card && card.highlight && "ring-2 ring-purple-200")}>
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{card.label}</p>
                 <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">{card.value}</p>
-                <p className="text-sm text-stone-400 mt-2">{card.sub}</p>
+                <p className="text-sm text-stone-400 mt-2 truncate max-w-[150px]">{card.sub}</p>
               </div>
               <div className={cn("w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center", card.color)}>
                 <card.icon size={18} className="md:w-5 md:h-5" />
