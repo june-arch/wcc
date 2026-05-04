@@ -1,10 +1,11 @@
 "use client";
 // src/components/LoginForm.tsx
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, KeyRound } from "lucide-react";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -84,6 +85,23 @@ export default function LoginForm() {
           "Masuk"
         )}
       </button>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-stone-200" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="px-2 bg-white text-stone-400">atau</span>
+        </div>
+      </div>
+
+      <a
+        href={`${process.env.NEXT_PUBLIC_PORTAL_URL || "http://localhost:4000"}/login?redirect=${typeof window !== "undefined" ? window.location.href : ""}`}
+        className="btn w-full justify-center py-2.5 text-sm border border-stone-300 bg-white text-stone-700 hover:bg-stone-50 hover:text-stone-900"
+      >
+        <KeyRound size={16} />
+        Masuk dengan Portal SSO
+      </a>
     </form>
   );
 }
