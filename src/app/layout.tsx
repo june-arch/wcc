@@ -22,7 +22,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "WCC Oranye Capture — Wedding Management",
+  title: "WCC Oranye Capture — Acrylic Oranye Craft",
   description: "Sistem manajemen booking & timeline wedding photography. Kelola jadwal, klien, dan dokumen pernikahan dengan mudah.",
   keywords: ["wedding management", "booking system", "wedding photography", "WCC", "wedding planner", "manajemen pernikahan"],
   authors: [{ name: "WCC Oranye Capture" }],
@@ -32,20 +32,20 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   icons: {
-    icon: "/logo.webp",
-    shortcut: "/logo.webp",
-    apple: "/logo.webp",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     type: "website",
     locale: "id_ID",
     url: "https://wcc-liart.vercel.app",
     siteName: "WCC Oranye Capture",
-    title: "WCC Oranye Capture — Wedding Management",
+    title: "WCC Oranye Capture — Acrylic Oranye Craft",
     description: "Sistem manajemen booking & timeline wedding photography. Kelola jadwal, klien, dan dokumen pernikahan dengan mudah.",
     images: [
       {
-        url: "/logo.webp",
+        url: "/favicon.ico",
         width: 512,
         height: 512,
         alt: "WCC Oranye Capture Logo",
@@ -54,9 +54,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "WCC Oranye Capture — Wedding Management",
+    title: "WCC Oranye Capture — Acrylic Oranye Craft",
     description: "Sistem manajemen booking & timeline wedding photography.",
-    images: ["/logo.webp"],
+    images: ["/favicon.ico"],
     creator: "@wcc_oranye",
   },
   robots: {

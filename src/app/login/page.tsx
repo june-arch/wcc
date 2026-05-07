@@ -21,7 +21,7 @@ export default async function LoginPage() {
         {/* Logo / Brand */}
         <div className="text-center mb-6 sm:mb-8">
           <Image
-            src="/logo.webp"
+            src="/favicon-32x32.png"
             alt="WCC Oranye Capture Logo"
             width={200}
             height={80}
