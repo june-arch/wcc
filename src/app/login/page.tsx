@@ -29,7 +29,7 @@ export default async function LoginPage() {
             priority
           />
           <h1 className="text-2xl font-bold text-stone-900 tracking-tight">WCC Oranye Capture</h1>
-          <p className="text-stone-500 text-sm mt-1">Wedding Management System</p>
+          <p className="text-stone-500 text-sm mt-1">Acrylic Oranye Craft</p>
         </div>
 
         {/* Form card */}

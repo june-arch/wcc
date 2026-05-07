@@ -23,7 +23,7 @@ export default function Header({ user }: Props) {
         />
         <div className="flex flex-col">
           <span className="font-bold text-stone-900 text-base">WCC Oranye Capture</span>
-          <span className="text-xs text-stone-500">Acrylic Oranye Craft</span>
+          <span className="font-bold text-stone-900 text-base">Acrylic Oranye Craft</span>
         </div>
       </div>
     </header>

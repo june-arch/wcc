@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   title: "WCC Oranye Capture — Acrylic Oranye Craft",
   description: "Sistem manajemen booking & timeline wedding photography. Kelola jadwal, klien, dan dokumen pernikahan dengan mudah.",
   keywords: ["wedding management", "booking system", "wedding photography", "WCC", "wedding planner", "manajemen pernikahan"],
-  authors: [{ name: "WCC Oranye Capture" }],
-  creator: "WCC Oranye Capture",
+  authors: [{ name: "Oranye Group" }],
+  creator: "Oranye Group",
   metadataBase: new URL("https://wcc-liart.vercel.app"),
   alternates: {
     canonical: "/",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
     url: "https://wcc-liart.vercel.app",
-    siteName: "WCC Oranye Capture",
+    siteName: "Oranye Group",
     title: "WCC Oranye Capture — Acrylic Oranye Craft",
     description: "Sistem manajemen booking & timeline wedding photography. Kelola jadwal, klien, dan dokumen pernikahan dengan mudah.",
     images: [
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
         url: "/favicon.ico",
         width: 512,
         height: 512,
-        alt: "WCC Oranye Capture Logo",
+        alt: "Oranye Group Logo",
       },
     ],
   },
