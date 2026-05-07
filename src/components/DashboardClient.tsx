@@ -317,9 +317,11 @@ function UnifiedCalendar({
     const dayMs = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
 
     const wcc = allBookings.filter((b) => {
-      const d = new Date(b.startDate);
-      d.setHours(0, 0, 0, 0);
-      return d.getTime() === dayMs;
+      const start = new Date(b.startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(b.endDate || b.startDate);
+      end.setHours(23, 59, 59, 999);
+      return dayMs >= start.getTime() && dayMs <= end.getTime();
     });
 
     const acrylic = allAcrylicOrders.filter((o) => {
