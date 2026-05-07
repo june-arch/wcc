@@ -95,3 +95,40 @@ export type BookingAddOn = {
   price: number;
   addOn: AddOn;
 };
+
+// ─── Acrylic types ───────────────────────────────────────────────────────────
+
+export type PanelType = {
+  id: string;
+  name: string;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
+export type AcrylicPayment = {
+  id: string;
+  acrylicOrderId: string;
+  amount: number;
+  note: string | null;
+  paidAt: Date | string;
+};
+
+export type AcrylicOrderWithRelations = {
+  id: string;
+  clientName: string;
+  acrylicText: string;
+  address: string;
+  eventDate: Date | string;
+  eventTime: string | null;
+  panelTypes: string[];
+  totalPrice: number;
+  status: string;
+  notes: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  createdById: string | null;
+  createdBy?: { name: string; email: string } | null;
+  payments: AcrylicPayment[];
+};

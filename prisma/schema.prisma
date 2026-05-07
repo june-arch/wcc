@@ -1,6 +1,7 @@
 // prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -21,6 +22,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   bookings      Booking[] @relation("CreatedBy")
+  acrylicOrders AcrylicOrder[] @relation("CreatedByAcrylic")
 
   @@map("users")
 }
@@ -194,5 +196,57 @@ enum BookingStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum AcrylicStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+// ─── Acrylic Order models ─────────────────────────────────────────────────────
+
+model PanelType {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "Graduation Akrilik", "Standing Acrylic"
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("panel_types")
+}
+
+model AcrylicOrder {
+  id          String        @id @default(cuid())
+  clientName  String
+  acrylicText String        // Full custom text/ucapan (multiline)
+  address     String
+  eventDate   DateTime
+  eventTime   String?       // "08:00" — time of event
+  panelTypes  String[]      // array of panel type names (PostgreSQL text[])
+  totalPrice  Int           // total price in Rp (free input)
+  status      AcrylicStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  createdById String?
+  createdBy   User?         @relation("CreatedByAcrylic", fields: [createdById], references: [id])
+  payments    AcrylicPayment[]
+
+  @@map("acrylic_orders")
+}
+
+model AcrylicPayment {
+  id              String       @id @default(cuid())
+  acrylicOrderId  String
+  acrylicOrder    AcrylicOrder @relation(fields: [acrylicOrderId], references: [id], onDelete: Cascade)
+  amount          Int
+  note            String?
+  paidAt          DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+
+  @@map("acrylic_payments")
 }
 

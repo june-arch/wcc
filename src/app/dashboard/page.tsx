@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  const [allBookings, monthBookings] = await Promise.all([
+  const [allBookings, monthBookings, allAcrylicOrders, monthAcrylicOrders] = await Promise.all([
     prisma.booking.findMany({
       include: {
         payments: true,
@@ -31,42 +31,65 @@ export default async function DashboardPage() {
         bookingAddOns: true,
       },
     }),
+    prisma.acrylicOrder.findMany({
+      include: { payments: true },
+      orderBy: { eventDate: "asc" },
+    }),
+    prisma.acrylicOrder.findMany({
+      where: { eventDate: { gte: startOfMonth, lte: endOfMonth } },
+    }),
   ]);
 
-  // Calculate totals using new schema
-  const totalRevenue = allBookings.reduce((s, b) => {
+  // WCC total
+  const wccTotalRevenue = allBookings.reduce((s, b) => {
     const packagePrice = b.pricePackage?.price || 0;
     const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
     const transport = b.transport || 0;
     const discount = b.discount || 0;
     return s + Math.max(0, packagePrice + addOnsTotal + transport - discount);
   }, 0);
-
-  const paidRevenue = allBookings.reduce((s, b) => {
+  const wccPaidRevenue = allBookings.reduce((s, b) => {
     const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
     return s + totalPaid;
   }, 0);
 
+  // Acrylic total
+  const acrylicTotalRevenue = allAcrylicOrders.reduce((s, o) => s + o.totalPrice, 0);
+  const acrylicPaidRevenue = allAcrylicOrders.reduce((s, o) => {
+    const totalPaid = o.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    return s + totalPaid;
+  }, 0);
+
+  // Combined
+  const totalRevenue = wccTotalRevenue + acrylicTotalRevenue;
+  const paidRevenue = wccPaidRevenue + acrylicPaidRevenue;
   const unpaidRevenue = totalRevenue - paidRevenue;
-  const completedCount = allBookings.filter((b) => b.status === "COMPLETED").length;
-  // Get today at midnight for date comparison
+  const completedCount = allBookings.filter((b) => b.status === "COMPLETED").length +
+    allAcrylicOrders.filter((o) => o.status === "COMPLETED").length;
+
+  // Upcoming — combine both, sort by date
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  const upcomingBookings = allBookings
-    .filter((b) => {
-      const startDate = new Date(b.startDate);
-      startDate.setHours(0, 0, 0, 0);
-      return startDate.getTime() >= today.getTime(); // Include today and future
+
+  const upcomingBookings = [...allBookings, ...allAcrylicOrders.map(o => ({
+    ...o,
+    _type: "acrylic" as const,
+    payments: o.payments || [],
+  }))]
+    .filter((b: any) => {
+      const d = new Date(b._type === "acrylic" ? b.eventDate : b.startDate);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime() >= today.getTime();
     })
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .sort((a: any, b: any) => new Date(a._type === "acrylic" ? a.eventDate : a.startDate).getTime() -
+                        new Date(b._type === "acrylic" ? b.eventDate : b.startDate).getTime())
     .slice(0, 6)
-    .map((b) => ({
+    .map((b: any) => ({
       ...b,
-      payments: b.payments || [],
-      pricePackage: b.pricePackage,
-      bookingAddOns: b.bookingAddOns || [],
-      bookingEventTypes: b.bookingEventTypes || [],
+      pricePackage: b.pricePackage ?? null,
+      bookingAddOns: b.bookingAddOns ?? [],
+      bookingEventTypes: b.bookingEventTypes ?? [],
+      panelTypes: b.panelTypes ?? [],
     }));
 
   return (
@@ -78,8 +101,16 @@ export default async function DashboardPage() {
         unpaidRevenue,
         completedCount,
         pendingCount: allBookings.filter((b) => b.status === "PENDING").length,
+        // Acrylic
+        totalAcrylicOrders: allAcrylicOrders.length,
+        monthAcrylicOrders: monthAcrylicOrders.length,
+        acrylicTotalRevenue,
+        acrylicPaidRevenue,
+        acrylicUnpaidRevenue: acrylicTotalRevenue - acrylicPaidRevenue,
       }}
       upcomingBookings={upcomingBookings}
+      allBookings={allBookings}
+      allAcrylicOrders={allAcrylicOrders}
     />
   );
 }

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   CalendarDays,
+  Square,
   Wallet,
   Database,
   Settings,
@@ -16,6 +17,7 @@ import { useRouter } from "next/navigation";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/bookings", label: "Booking", icon: CalendarDays },
+  { href: "/dashboard/acrylic", label: "Acrylic", icon: Square },
   { href: "/dashboard/finance", label: "Keuangan", icon: Wallet },
   { href: "/dashboard/price-list", label: "Master Data", icon: Database },
   { href: "/dashboard/settings", label: "Setting", icon: Settings },

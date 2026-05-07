@@ -208,7 +208,30 @@ async function main() {
   console.log("✅ Seeded", addOns.length, "add-ons");
 
   // ============================================================
-  // 5. SEED BOOKINGS (Data dari Screenshot)
+  // 5. SEED PANEL TYPES (Master Data — Acrylic)
+  // ============================================================
+  console.log("🌱 Seeding panel types...");
+
+  const panelTypes = [
+    { id: "graduation-akrilik", name: "Graduation Akrilik", isActive: true, sortOrder: 1 },
+    { id: "standing-acrylic", name: "Standing Acrylic", isActive: true, sortOrder: 2 },
+    { id: "mini-acrylic", name: "Mini Acrylic", isActive: true, sortOrder: 3 },
+    { id: "wall-mount-acrylic", name: "Wall Mount Acrylic", isActive: true, sortOrder: 4 },
+    { id: "wedding-acrylic", name: "Wedding Acrylic", isActive: true, sortOrder: 5 },
+    { id: "custom-acrylic", name: "Custom Acrylic", isActive: true, sortOrder: 6 },
+  ];
+
+  for (const pt of panelTypes) {
+    await prisma.panelType.upsert({
+      where: { id: pt.id },
+      update: {},
+      create: pt,
+    });
+  }
+  console.log("✅ Seeded", panelTypes.length, "panel types");
+
+  // ============================================================
+  // 6. SEED BOOKINGS (Data dari Screenshot)
   // ============================================================
   console.log("🌱 Seeding bookings...");
 
