@@ -15,7 +15,7 @@ export default function Header({ user }: Props) {
     >
       <div className="flex items-center gap-4 w-full">
         <Image
-          src="/logo.webp"
+          src="/android-chrome-512x512.png"
           alt="WCC"
           width={140}
           height={56}
@@ -23,7 +23,7 @@ export default function Header({ user }: Props) {
         />
         <div className="flex flex-col">
           <span className="font-bold text-stone-900 text-base">WCC Oranye Capture</span>
-          <span className="text-xs text-stone-500">Wedding Management System</span>
+          <span className="text-xs text-stone-500">Acrylic Oranye Craft</span>
         </div>
       </div>
     </header>
