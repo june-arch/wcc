@@ -5,7 +5,7 @@ import {
   CalendarDays, CheckCircle2, Clock,
   ArrowRight, Camera, Banknote, Square
 } from "lucide-react";
-import { formatDate, getStatusColor, getStatusLabel, getDaysUntil, cn } from "@/lib/utils";
+import { formatDate, getStatusColor, getStatusLabel, getDaysUntil, cn, getHolidayInfo, isWeekend, getDayColor } from "@/lib/utils";
 import { BookingWithRelations } from "@/types";
 import { AcrylicOrderWithRelations } from "@/types";
 import {
@@ -363,6 +363,9 @@ function UnifiedCalendar({
           const events = getEventsForDay(day);
           const inCurrentMonth = isSameMonth(day, calendarDate);
           const todayFlag = isToday(day);
+          const holidayInfo = getHolidayInfo(day);
+          const isWeekendDay = isWeekend(day);
+          const dayColor = getDayColor(day);
 
           return (
             <div
@@ -370,16 +373,31 @@ function UnifiedCalendar({
               className={cn(
                 "calendar-cell",
                 !inCurrentMonth && "opacity-40",
-                todayFlag && "calendar-today"
+                todayFlag && "calendar-today",
+                dayColor === 'holiday' && "bg-red-50/40",
+                dayColor === 'weekend' && !todayFlag && "bg-stone-50"
               )}
             >
-              <div className="mb-1">
+              <div className="mb-0.5 flex items-center justify-between gap-1">
                 <span className={cn(
                   "text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full",
-                  todayFlag ? "bg-orange-500 text-white" : "text-stone-500"
+                  todayFlag ? "bg-orange-500 text-white" :
+                  holidayInfo ? "text-red-500 font-bold" :
+                  isWeekendDay ? "text-stone-400" :
+                  "text-stone-500"
                 )}>
                   {day.getDate()}
                 </span>
+                {holidayInfo && (
+                  <span className={cn(
+                    "text-[8px] font-medium leading-none shrink-0",
+                    holidayInfo.cutiBersama ? "text-orange-500" : "text-red-500"
+                  )}>
+                    {holidayInfo.label.length > 10
+                      ? holidayInfo.label.slice(0, 9) + '…'
+                      : holidayInfo.label}
+                  </span>
+                )}
               </div>
               <div className="space-y-0.5">
                 {events.slice(0, 3).map((e: any) => (
