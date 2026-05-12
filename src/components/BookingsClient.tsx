@@ -12,6 +12,7 @@ import BookingModal from "./BookingModal";
 import EditBookingModal from "./EditBookingModal";
 import BookingDetailPanel from "./BookingDetailPanel";
 import ResponsiveConfirm from "./ui/ResponsiveConfirm";
+import DayDetailModal from "./DayDetailModal";
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isToday, format, addMonths, subMonths
@@ -43,6 +44,7 @@ export default function BookingsClient({ initialBookings }: Props) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; bookingId: string | null }>({ isOpen: false, bookingId: null });
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   // Listen for edit event from detail panel
   useEffect(() => {
@@ -236,6 +238,7 @@ export default function BookingsClient({ initialBookings }: Props) {
               onToday={() => setCalendarDate(new Date())}
               getBookingsForDay={getBookingsForDay}
               onSelectBooking={setSelectedBooking}
+              onSelectDay={(day) => setSelectedDay(day)}
               selectedId={selectedBooking?.id}
             />
           )}
@@ -284,6 +287,18 @@ export default function BookingsClient({ initialBookings }: Props) {
         cancelText="Batal"
         variant="danger"
       />
+
+      {selectedDay && (
+        <DayDetailModal
+          date={selectedDay}
+          holidayInfo={getHolidayInfo(selectedDay)}
+          isWeekend={isWeekend(selectedDay)}
+          bookings={getBookingsForDay(selectedDay)}
+          type="wcc"
+          onClose={() => setSelectedDay(null)}
+          onSelectBooking={(b) => { setSelectedBooking(b); setSelectedDay(null); }}
+        />
+      )}
     </div>
   );
 }
@@ -487,7 +502,7 @@ function ListView({
 /* ─── Calendar View ──────────────────────────────────────────────────────────── */
 function CalendarView({
   days, calendarDate, onPrev, onNext, onToday,
-  getBookingsForDay, onSelectBooking, selectedId,
+  getBookingsForDay, onSelectBooking, onSelectDay, selectedId,
 }: {
   days: Date[];
   calendarDate: Date;
@@ -496,6 +511,7 @@ function CalendarView({
   onToday: () => void;
   getBookingsForDay: (d: Date) => BookingWithRelations[];
   onSelectBooking: (b: BookingWithRelations) => void;
+  onSelectDay: (d: Date) => void;
   selectedId?: string;
 }) {
   const dayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
@@ -546,15 +562,18 @@ function CalendarView({
               )}
             >
               <div className="mb-0.5 flex items-center justify-between gap-1">
-                <span className={cn(
-                  "text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full",
-                  todayFlag ? "bg-orange-500 text-white" :
-                  holidayInfo ? "text-red-500 font-bold" :
-                  isWeekendDay ? "text-stone-400" :
-                  "text-stone-500"
-                )}>
+                <button
+                  onClick={() => onSelectDay(day)}
+                  className={cn(
+                    "text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full transition-all hover:scale-110",
+                    todayFlag ? "bg-orange-500 text-white hover:bg-orange-600" :
+                    holidayInfo ? "text-red-500 hover:bg-red-100" :
+                    isWeekendDay ? "text-stone-400 hover:bg-stone-200" :
+                    "text-stone-500 hover:bg-stone-200"
+                  )}
+                >
                   {day.getDate()}
-                </span>
+                </button>
                 {holidayInfo && (
                   <span className={cn(
                     "text-[8px] font-medium leading-none shrink-0",

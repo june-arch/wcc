@@ -8,6 +8,7 @@ import {
 import { formatDate, getStatusColor, getStatusLabel, getDaysUntil, cn, getHolidayInfo, isWeekend, getDayColor } from "@/lib/utils";
 import { BookingWithRelations } from "@/types";
 import { AcrylicOrderWithRelations } from "@/types";
+import DayDetailModal from "./DayDetailModal";
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isToday, format, addMonths, subMonths
@@ -305,6 +306,7 @@ function UnifiedCalendar({
   allAcrylicOrders: AcrylicOrderWithRelations[];
 }) {
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   const calendarDays = eachDayOfInterval({
     start: startOfWeek(startOfMonth(calendarDate), { weekStartsOn: 1 }),
@@ -332,6 +334,12 @@ function UnifiedCalendar({
 
     return [...wcc.map(b => ({ ...b, _type: "wcc" as const })), ...acrylic.map(o => ({ ...o, _type: "acrylic" as const }))];
   };
+
+  const selectedEvents = selectedDay ? getEventsForDay(selectedDay) : [];
+  const selectedHoliday = selectedDay ? getHolidayInfo(selectedDay) : null;
+  const selectedIsWeekend = selectedDay ? isWeekend(selectedDay) : false;
+  const selectedWCC = selectedEvents.filter((e: any) => e._type === "wcc") as (BookingWithRelations & { _type: "wcc" })[];
+  const selectedAcrylic = selectedEvents.filter((e: any) => e._type === "acrylic") as (AcrylicOrderWithRelations & { _type: "acrylic" })[];
 
   return (
     <div className="card overflow-hidden">
@@ -379,15 +387,18 @@ function UnifiedCalendar({
               )}
             >
               <div className="mb-0.5 flex items-center justify-between gap-1">
-                <span className={cn(
-                  "text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full",
-                  todayFlag ? "bg-orange-500 text-white" :
-                  holidayInfo ? "text-red-500 font-bold" :
-                  isWeekendDay ? "text-stone-400" :
-                  "text-stone-500"
-                )}>
+                <button
+                  onClick={() => setSelectedDay(day)}
+                  className={cn(
+                    "text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full transition-all hover:scale-110",
+                    todayFlag ? "bg-orange-500 text-white hover:bg-orange-600" :
+                    holidayInfo ? "text-red-500 hover:bg-red-100" :
+                    isWeekendDay ? "text-stone-400 hover:bg-stone-200" :
+                    "text-stone-500 hover:bg-stone-200"
+                  )}
+                >
                   {day.getDate()}
-                </span>
+                </button>
                 {holidayInfo && (
                   <span className={cn(
                     "text-[8px] font-medium leading-none shrink-0",
@@ -401,9 +412,9 @@ function UnifiedCalendar({
               </div>
               <div className="space-y-0.5">
                 {events.slice(0, 3).map((e: any) => (
-                  <Link
+                  <button
                     key={e.id}
-                    href={e._type === "acrylic" ? `/dashboard/acrylic?id=${e.id}` : `/dashboard/bookings?id=${e.id}`}
+                    onClick={() => setSelectedDay(day)}
                     className={cn(
                       "w-full text-left text-[10px] font-semibold px-1.5 py-0.5 rounded truncate transition-colors block",
                       e._type === "acrylic"
@@ -412,7 +423,7 @@ function UnifiedCalendar({
                     )}
                   >
                     {e.clientName.split(" ")[0]}
-                  </Link>
+                  </button>
                 ))}
                 {events.length > 3 && (
                   <p className="text-[10px] text-stone-400 px-1">+{events.length - 3}</p>
@@ -422,6 +433,18 @@ function UnifiedCalendar({
           );
         })}
       </div>
+
+      {selectedDay && (
+        <DayDetailModal
+          date={selectedDay}
+          holidayInfo={selectedHoliday}
+          isWeekend={selectedIsWeekend}
+          wccBookings={selectedWCC}
+          acrylicOrders={selectedAcrylic}
+          type="mixed"
+          onClose={() => setSelectedDay(null)}
+        />
+      )}
     </div>
   );
 }

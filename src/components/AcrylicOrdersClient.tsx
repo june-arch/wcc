@@ -11,6 +11,7 @@ import type { AcrylicOrderWithRelations, ViewMode } from "@/types";
 import AcrylicOrderModal from "./AcrylicOrderModal";
 import AcrylicDetailPanel from "./AcrylicDetailPanel";
 import ResponsiveConfirm from "./ui/ResponsiveConfirm";
+import DayDetailModal from "./DayDetailModal";
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isToday, format, addMonths, subMonths
@@ -37,6 +38,7 @@ export default function AcrylicOrdersClient({ initialOrders }: { initialOrders: 
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; orderId: string | null }>({ isOpen: false, orderId: null });
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
   // Listen for edit event from detail panel
   useEffect(() => {
@@ -216,6 +218,7 @@ export default function AcrylicOrdersClient({ initialOrders }: { initialOrders: 
               onToday={() => setCalendarDate(new Date())}
               getOrdersForDay={getOrdersForDay}
               onSelectOrder={setSelectedOrder}
+              onSelectDay={(day) => setSelectedDay(day)}
               selectedId={selectedOrder?.id}
             />
           )}
@@ -263,6 +266,18 @@ export default function AcrylicOrdersClient({ initialOrders }: { initialOrders: 
         cancelText="Batal"
         variant="danger"
       />
+
+      {selectedDay && (
+        <DayDetailModal
+          date={selectedDay}
+          holidayInfo={getHolidayInfo(selectedDay)}
+          isWeekend={isWeekend(selectedDay)}
+          orders={getOrdersForDay(selectedDay)}
+          type="acrylic"
+          onClose={() => setSelectedDay(null)}
+          onSelectOrder={(o) => { setSelectedOrder(o); setSelectedDay(null); }}
+        />
+      )}
     </div>
   );
 }
@@ -413,7 +428,7 @@ function ListView({
 /* ─── Calendar View ──────────────────────────────────────────────────────────── */
 function CalendarView({
   days, calendarDate, onPrev, onNext, onToday,
-  getOrdersForDay, onSelectOrder, selectedId,
+  getOrdersForDay, onSelectOrder, onSelectDay, selectedId,
 }: {
   days: Date[];
   calendarDate: Date;
@@ -422,6 +437,7 @@ function CalendarView({
   onToday: () => void;
   getOrdersForDay: (d: Date) => AcrylicOrderWithRelations[];
   onSelectOrder: (o: AcrylicOrderWithRelations) => void;
+  onSelectDay: (d: Date) => void;
   selectedId?: string;
 }) {
   const dayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
@@ -472,15 +488,18 @@ function CalendarView({
               )}
             >
               <div className="mb-0.5 flex items-center justify-between gap-1">
-                <span className={cn(
-                  "text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full",
-                  todayFlag ? "bg-cyan-500 text-white" :
-                  holidayInfo ? "text-red-500 font-bold" :
-                  isWeekendDay ? "text-stone-400" :
-                  "text-stone-500"
-                )}>
+                <button
+                  onClick={() => onSelectDay(day)}
+                  className={cn(
+                    "text-xs font-semibold w-6 h-6 inline-flex items-center justify-center rounded-full transition-all hover:scale-110",
+                    todayFlag ? "bg-cyan-500 text-white hover:bg-cyan-600" :
+                    holidayInfo ? "text-red-500 hover:bg-red-100" :
+                    isWeekendDay ? "text-stone-400 hover:bg-stone-200" :
+                    "text-stone-500 hover:bg-stone-200"
+                  )}
+                >
                   {day.getDate()}
-                </span>
+                </button>
                 {holidayInfo && (
                   <span className={cn(
                     "text-[8px] font-medium leading-none shrink-0",
