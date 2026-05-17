@@ -63,7 +63,7 @@ export default function DayDetailModal({
         <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
           <div className={cn(
-            "px-5 py-4 flex items-start justify-between",
+            "px-5 py-4 flex items-center sm:items-start justify-between",
             holidayInfo ? "bg-red-50" : isWeekend ? "bg-stone-100" : type === "acrylic" ? "bg-cyan-50" : "bg-orange-50"
           )}>
             <div>

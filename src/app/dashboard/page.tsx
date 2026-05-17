@@ -52,6 +52,7 @@ export default async function DashboardPage() {
     const totalPaid = b.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
     return s + totalPaid;
   }, 0);
+  const wccUnpaidRevenue = wccTotalRevenue - wccPaidRevenue;
 
   // Acrylic total
   const acrylicTotalRevenue = allAcrylicOrders.reduce((s, o) => s + o.totalPrice, 0);
@@ -59,13 +60,14 @@ export default async function DashboardPage() {
     const totalPaid = o.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
     return s + totalPaid;
   }, 0);
+  const acrylicUnpaidRevenue = acrylicTotalRevenue - acrylicPaidRevenue;
 
   // Combined
   const totalRevenue = wccTotalRevenue + acrylicTotalRevenue;
   const paidRevenue = wccPaidRevenue + acrylicPaidRevenue;
   const unpaidRevenue = totalRevenue - paidRevenue;
-  const completedCount = allBookings.filter((b) => b.status === "COMPLETED").length +
-    allAcrylicOrders.filter((o) => o.status === "COMPLETED").length;
+  const wccCompletedCount = allBookings.filter((b) => b.status === "COMPLETED").length;
+  const acrylicCompletedCount = allAcrylicOrders.filter((o) => o.status === "COMPLETED").length;
 
   // Upcoming — combine both, sort by date
   const today = new Date();
@@ -98,15 +100,18 @@ export default async function DashboardPage() {
         totalBookings: allBookings.length,
         monthBookings: monthBookings.length,
         totalRevenue,
+        totalWCCRevenue: wccTotalRevenue,
+        wccPaidRevenue,
+        wccUnpaidRevenue,
+        totalAcrylicRevenue: acrylicTotalRevenue,
+        acrylicPaidRevenue,
+        acrylicUnpaidRevenue,
         unpaidRevenue,
-        completedCount,
+        wccCompletedCount,
+        acrylicCompletedCount,
         pendingCount: allBookings.filter((b) => b.status === "PENDING").length,
-        // Acrylic
         totalAcrylicOrders: allAcrylicOrders.length,
         monthAcrylicOrders: monthAcrylicOrders.length,
-        acrylicTotalRevenue,
-        acrylicPaidRevenue,
-        acrylicUnpaidRevenue: acrylicTotalRevenue - acrylicPaidRevenue,
       }}
       upcomingBookings={upcomingBookings}
       allBookings={allBookings}

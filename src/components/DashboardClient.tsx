@@ -20,14 +20,18 @@ interface Stats {
   totalBookings: number;
   monthBookings: number;
   totalRevenue: number;
+  totalWCCRevenue: number;
+  wccPaidRevenue: number;
+  wccUnpaidRevenue: number;
+  totalAcrylicRevenue: number;
+  acrylicPaidRevenue: number;
+  acrylicUnpaidRevenue: number;
   unpaidRevenue: number;
-  completedCount: number;
+  wccCompletedCount: number;
+  acrylicCompletedCount: number;
   pendingCount: number;
   totalAcrylicOrders: number;
   monthAcrylicOrders: number;
-  acrylicTotalRevenue: number;
-  acrylicPaidRevenue: number;
-  acrylicUnpaidRevenue: number;
 }
 
 interface Props {
@@ -61,8 +65,9 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
       </div>
 
       {/* ─── Stat Cards ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
-        {/* Total Pendapatan — full width */}
+      {/* Row 1: 3-column — Total Revenue, WCC Revenue, Acrylic Revenue */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+        {/* Total Pendapatan — all combined */}
         <div className="card p-4 md:p-6 border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white">
           <div className="flex items-start justify-between">
             <div>
@@ -70,8 +75,8 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
               <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">
                 Rp {stats.totalRevenue.toLocaleString("id-ID")}
               </p>
-              <p className="text-sm text-emerald-600 mt-1">Paid: Rp {(stats.totalRevenue - stats.unpaidRevenue).toLocaleString("id-ID")}</p>
-              <p className="text-sm text-red-500">Unpaid: Rp {stats.unpaidRevenue.toLocaleString("id-ID")}</p>
+              <p className="text-sm text-emerald-600 mt-1">Lunas: Rp {(stats.totalRevenue - stats.unpaidRevenue).toLocaleString("id-ID")}</p>
+              <p className="text-sm text-red-500">Piutang: Rp {stats.unpaidRevenue.toLocaleString("id-ID")}</p>
             </div>
             <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600">
               <Banknote size={18} className="md:w-5 md:h-5" />
@@ -79,7 +84,44 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
           </div>
         </div>
 
-        {/* WCC */}
+        {/* WCC Revenue */}
+        <div className="card p-4 md:p-6 border border-orange-100">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold text-orange-500 uppercase tracking-wider">Pendapatan WCC</p>
+              <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">
+                Rp {stats.totalWCCRevenue.toLocaleString("id-ID")}
+              </p>
+              <p className="text-sm text-orange-600 mt-1">Lunas: Rp {stats.wccPaidRevenue.toLocaleString("id-ID")}</p>
+              <p className="text-sm text-red-400">Piutang: Rp {stats.wccUnpaidRevenue.toLocaleString("id-ID")}</p>
+            </div>
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-orange-100 text-orange-500">
+              <Camera size={18} className="md:w-5 md:h-5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Acrylic Revenue */}
+        <div className="card p-4 md:p-6 border border-cyan-100">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold text-cyan-500 uppercase tracking-wider">Pendapatan Acrylic</p>
+              <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">
+                Rp {stats.totalAcrylicRevenue.toLocaleString("id-ID")}
+              </p>
+              <p className="text-sm text-cyan-600 mt-1">Lunas: Rp {stats.acrylicPaidRevenue.toLocaleString("id-ID")}</p>
+              <p className="text-sm text-red-400">Piutang: Rp {stats.acrylicUnpaidRevenue.toLocaleString("id-ID")}</p>
+            </div>
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-cyan-100 text-cyan-500">
+              <Square size={18} className="md:w-5 md:h-5" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2: Booking counts + Selesai + Menunggu */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        {/* WCC Booking count */}
         <div className="card p-4 md:p-6 border border-orange-100">
           <div className="flex items-start justify-between">
             <div>
@@ -95,7 +137,7 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
           </div>
         </div>
 
-        {/* Acrylic */}
+        {/* Acrylic Order count */}
         <div className="card p-4 md:p-6 border border-cyan-100">
           <div className="flex items-start justify-between">
             <div>
@@ -110,15 +152,16 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-3 md:gap-4">
+        {/* Selesai WCC */}
         <div className="card p-4 md:p-6 border border-blue-100">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Selesai</p>
-              <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">{stats.completedCount}</p>
-              <p className="text-sm text-stone-400 mt-1">WCC + Acrylic</p>
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Selesai WCC</p>
+              <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">
+                {stats.wccCompletedCount}
+              </p>
+              <p className="text-sm text-stone-400 mt-1">booking selesai</p>
             </div>
             <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-blue-100 text-blue-600">
               <CheckCircle2 size={18} className="md:w-5 md:h-5" />
@@ -126,15 +169,18 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
           </div>
         </div>
 
-        <div className="card p-4 md:p-6 border border-amber-100">
+        {/* Selesai Acrylic */}
+        <div className="card p-4 md:p-6 border border-cyan-100">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Menunggu</p>
-              <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">{stats.pendingCount}</p>
-              <p className="text-sm text-stone-400 mt-1">WCC pending</p>
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Selesai Acrylic</p>
+              <p className="text-2xl md:text-3xl font-bold text-stone-900 mt-2 leading-none">
+                {stats.acrylicCompletedCount}
+              </p>
+              <p className="text-sm text-stone-400 mt-1">order selesai</p>
             </div>
-            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-amber-100 text-amber-600">
-              <Clock size={18} className="md:w-5 md:h-5" />
+            <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-cyan-100 text-cyan-600">
+              <CheckCircle2 size={18} className="md:w-5 md:h-5" />
             </div>
           </div>
         </div>
