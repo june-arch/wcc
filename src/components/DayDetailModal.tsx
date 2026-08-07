@@ -59,11 +59,11 @@ export default function DayDetailModal({
   return (
     <>
       <div className="fixed inset-0 bg-black/40 z-50 animate-fade-in" onClick={onClose} />
-      <div className="fixed inset-x-4 bottom-0 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md z-50 animate-slide-up">
-        <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-slide-up">
           {/* Header */}
           <div className={cn(
-            "px-5 py-4 flex items-center sm:items-start justify-between",
+            "px-5 py-4 flex items-center sm:items-start justify-between shrink-0",
             holidayInfo ? "bg-red-50" : isWeekend ? "bg-stone-100" : type === "acrylic" ? "bg-cyan-50" : "bg-orange-50"
           )}>
             <div>
@@ -99,7 +99,7 @@ export default function DayDetailModal({
           </div>
 
           {/* Summary */}
-          <div className="px-5 py-2.5 border-b border-stone-100 flex items-center gap-3 text-xs text-stone-500">
+          <div className="px-5 py-2.5 border-b border-stone-100 flex items-center gap-3 text-xs text-stone-500 shrink-0">
             <span className="flex items-center gap-1.5">
               <CalendarDays size={12} />
               {totalEvents} event{totalEvents !== 1 ? "s" : ""}
@@ -119,7 +119,7 @@ export default function DayDetailModal({
           </div>
 
           {/* Event list */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
             {totalEvents === 0 ? (
               <div className="px-5 py-8 text-center">
                 <CalendarDays size={28} className="mx-auto text-stone-200 mb-2" />
