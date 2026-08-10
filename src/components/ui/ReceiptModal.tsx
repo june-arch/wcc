@@ -144,7 +144,7 @@ export default function ReceiptModal({
 
             <div className="space-y-2.5 text-sm relative">
               <p className="flex gap-2">
-                <span className="text-stone-400 w-24 shrink-0">Telah diterima dari</span>
+                <span className="text-stone-400 w-32 shrink-0 whitespace-nowrap">Telah diterima dari</span>
                 <span className="font-semibold">{payer}</span>
               </p>
               <p className="flex gap-2">
