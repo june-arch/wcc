@@ -203,15 +203,15 @@ export default function ReceiptModal({
                     alt="Tanda tangan"
                     className="h-16 w-auto object-contain"
                   />
-                  {/* Stempel nempel kiri TTD, setengah nutup */}
+                  {/* Stempel nempel kiri TTD, setengah nutup — z tertinggi (di atas TTD & nama) */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/stempel-wcc.png"
                     alt="Stempel"
-                    className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[4.5rem] w-[4.5rem] object-contain opacity-90"
+                    className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[4.5rem] w-[4.5rem] object-contain opacity-90 z-20"
                   />
                   {/* Nama penerima — absolute di bawah TTD, nimpa sedikit */}
-                  <p className="absolute left-1/2 -translate-x-1/2 top-full -mt-3 font-bold whitespace-nowrap">
+                  <p className="absolute left-1/2 -translate-x-1/2 top-full -mt-3 font-bold whitespace-nowrap z-10">
                     {receiver || "Riska Yulanda Saputri"}
                   </p>
                 </div>
