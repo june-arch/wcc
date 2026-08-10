@@ -185,28 +185,33 @@ export default function ReceiptModal({
 
             {/* TTD */}
             <div className="mt-6 grid grid-cols-2 gap-4 text-center text-xs relative z-10">
+              {/* Kiri: Yang menyerahkan */}
               <div>
-                <p className="text-stone-400 mb-10">Yang menyerahkan,</p>
-                <p className="font-bold">{clientName}</p>
+                <p className="text-stone-400 mb-2">Yang menyerahkan,</p>
+                {/* Spacer setinggi TTD agar nama sejajar dengan kolom kanan */}
+                <div className="h-16 flex items-end justify-center mb-1" aria-hidden="true" />
+                <p className="font-bold -mt-3">{clientName}</p>
               </div>
+              {/* Kanan: Penerima */}
               <div>
-                <p className="text-stone-400 mb-1">Penerima,</p>
-                {/* TTD dengan stempel di sebelah kiri sejajar, setengah menutupi TTD */}
-                <div className="relative inline-block mb-1">
+                <p className="text-stone-400 mb-2">Penerima,</p>
+                {/* TTD (besar) + stempel di kiri sejajar, setengah nutup */}
+                <div className="relative h-16 flex items-end justify-center mb-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/ttd-riska.png"
                     alt="Tanda tangan"
-                    className="h-12 w-auto object-contain"
+                    className="h-16 w-auto object-contain"
                   />
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/stempel-wcc.png"
                     alt="Stempel"
-                    className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 object-contain opacity-90"
+                    className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[4.5rem] w-[4.5rem] object-contain opacity-90"
                   />
                 </div>
-                <p className="font-bold">{receiver || "Riska Yulanda Saputri"}</p>
+                {/* -mt-3: bawah TTD nimpa nama sedikit */}
+                <p className="font-bold -mt-3">{receiver || "Riska Yulanda Saputri"}</p>
               </div>
             </div>
           </div>
