@@ -235,6 +235,12 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.02em; color: var(-
 
 /* Print: hanya kwitansi yang tampil saat mencetak */
 @media print {
+  /* Ukuran kertas pas dengan kwitansi (bukan A4 penuh) — PDF tidak boros kosong */
+  @page {
+    size: 125mm 185mm;
+    margin: 0;
+  }
+
   body * {
     visibility: hidden;
   }

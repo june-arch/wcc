@@ -40,6 +40,24 @@ export default function ReceiptModal({
     return () => document.removeEventListener("keydown", h);
   }, [open, onClose]);
 
+  // Set document.title sementara agar file PDF hasil unduh bernama
+  // kwitansi-<nama order>-<tanggal>.pdf (Chrome pakai title sebagai nama file default)
+  const handlePrint = () => {
+    const originalTitle = document.title;
+    const safeName = (clientName || payer)
+      .replace(/[^\w\s-]/g, "") // buang karakter aneh (&, /, dll)
+      .trim()
+      .replace(/\s+/g, "-");
+    const dateStr = format(new Date(paidAt), "yyyy-MM-dd");
+    document.title = `kwitansi-${safeName}-${dateStr}`;
+    const restore = () => {
+      document.title = originalTitle;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+  };
+
   if (!open) return null;
 
   return (
@@ -55,7 +73,7 @@ export default function ReceiptModal({
             <p className="text-sm font-semibold text-stone-700">Kwitansi Pembayaran</p>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => window.print()}
+                onClick={handlePrint}
                 className="btn btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5"
               >
                 <Printer size={14} /> Cetak
@@ -70,14 +88,30 @@ export default function ReceiptModal({
           </div>
 
           {/* Isi kwitansi (yang tercetak) */}
-          <div className="px-5 py-5 flex-1 overflow-y-auto min-h-0 bg-white text-stone-900">
-            {/* Kop */}
-            <div className="text-center border-b-2 border-dashed border-stone-300 pb-3 mb-4">
-              <h1 className="text-lg font-bold tracking-tight">WCC Oranye Capture</h1>
-              <p className="text-xs text-stone-500">Acrylic Oranye Craft</p>
+          <div className="px-5 py-5 flex-1 overflow-y-auto min-h-0 bg-white text-stone-900 relative">
+            {/* Watermark logo */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none print:block" aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-kwitansi.png"
+                alt=""
+                className="w-64 h-64 opacity-[0.06] mix-blend-multiply select-none"
+              />
             </div>
 
-            <div className="flex items-start justify-between gap-3 mb-4">
+            {/* Kop */}
+            <div className="text-center border-b-2 border-dashed border-stone-300 pb-3 mb-4 relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo-kwitansi.png"
+                alt="WCC Oranye Capture"
+                className="h-14 w-auto mx-auto mb-2 object-contain"
+              />
+              <h1 className="text-lg font-bold tracking-tight">WCC Oranye Capture</h1>
+              <p className="text-xs text-stone-500">Kwitansi Pembayaran</p>
+            </div>
+
+            <div className="flex items-start justify-between gap-3 mb-4 relative">
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-stone-400 font-medium">No. Kwitansi</p>
                 <p className="font-mono text-sm font-bold text-orange-600">{receiptNumber}</p>
@@ -90,7 +124,7 @@ export default function ReceiptModal({
               </div>
             </div>
 
-            <div className="space-y-2.5 text-sm">
+            <div className="space-y-2.5 text-sm relative">
               <p className="flex gap-2">
                 <span className="text-stone-400 w-24 shrink-0">Telah diterima dari</span>
                 <span className="font-semibold">{payer}</span>
@@ -113,7 +147,7 @@ export default function ReceiptModal({
             </div>
 
             {/* TTD */}
-            <div className="mt-8 grid grid-cols-2 gap-4 text-center text-xs">
+            <div className="mt-8 grid grid-cols-2 gap-4 text-center text-xs relative">
               <div>
                 <p className="text-stone-400 mb-10">Yang menyerahkan,</p>
                 <p className="font-bold">{clientName}</p>
