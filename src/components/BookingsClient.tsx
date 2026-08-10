@@ -56,6 +56,20 @@ export default function BookingsClient({ initialBookings }: Props) {
     return () => window.removeEventListener('edit-booking', handleEdit as EventListener);
   }, []);
 
+  // Auto-select booking dari query param ?detail=<id> (dari modal kalender dashboard)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const detailId = params.get("detail");
+    if (detailId) {
+      const found = bookings.find((b) => b.id === detailId);
+      if (found) {
+        setSelectedBooking(found);
+        // bersihkan URL biar refresh tidak auto-open lagi
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+  }, [bookings]);
+
   // ─── Filtered list ───────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     return bookings.filter((b) => {

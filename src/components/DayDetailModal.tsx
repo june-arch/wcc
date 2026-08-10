@@ -10,6 +10,12 @@ interface Booking {
   id: string;
   clientName: string;
   location?: string | null;
+  startDate?: Date | string;
+  transport?: number;
+  discount?: number;
+  pricePackage?: { price: number } | null;
+  bookingAddOns?: Array<{ price: number }>;
+  payments?: Array<{ amount: number }>;
   bookingEventTypes?: Array<{ eventType: { label: string } }>;
 }
 
@@ -17,6 +23,8 @@ interface AcrylicOrder {
   id: string;
   clientName: string;
   acrylicText?: string | null;
+  totalPrice?: number;
+  payments?: Array<{ amount: number }>;
 }
 
 interface DayDetailModalProps {
@@ -50,6 +58,20 @@ export default function DayDetailModal({
   const allOrders = [...orders, ...acrylicOrders];
   const totalEvents = allBookings.length + allOrders.length;
 
+  // hitung total & sudah dibayar per booking WCC
+  const bookingPayment = (b: Booking) => {
+    const total =
+      (b.pricePackage?.price ?? 0) +
+      (b.bookingAddOns?.reduce((s, a) => s + a.price, 0) ?? 0) +
+      (b.transport ?? 0) -
+      (b.discount ?? 0);
+    const paid = b.payments?.reduce((s, p) => s + p.amount, 0) ?? 0;
+    return { total: Math.max(0, total), paid };
+  };
+
+  // hitung sudah dibayar per order acrylic
+  const orderPaid = (o: AcrylicOrder) => o.payments?.reduce((s, p) => s + p.amount, 0) ?? 0;
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
@@ -58,8 +80,8 @@ export default function DayDetailModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-50 animate-fade-in" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/40 z-[60] animate-fade-in" onClick={onClose} />
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-slide-up">
           {/* Header */}
           <div className={cn(
@@ -128,52 +150,95 @@ export default function DayDetailModal({
               </div>
             ) : (
               <div className="divide-y divide-stone-50">
-                {allBookings.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => { onSelectBooking?.(b); onClose(); }}
-                    className="w-full flex items-start gap-3 px-5 py-3 hover:bg-orange-50 transition-colors text-left"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
-                      <Camera size={14} className="text-orange-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-stone-900 truncate">{b.clientName}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {b.location && (
-                          <span className="text-xs text-stone-400 flex items-center gap-0.5 truncate max-w-[160px]">
-                            <MapPin size={10} />{b.location}
-                          </span>
-                        )}
-                        {b.bookingEventTypes && b.bookingEventTypes.length > 0 && (
-                          <span className="text-[10px] text-orange-500 font-medium truncate">
-                            {b.bookingEventTypes.map(be => be.eventType.label).join(", ")}
-                          </span>
+                {allBookings.map((b) => {
+                  const { total, paid } = bookingPayment(b);
+                  const sisa = Math.max(0, total - paid);
+                  const isLunas = total > 0 && paid >= total;
+                  return (
+                    <button
+                      key={b.id}
+                      onClick={() => { onSelectBooking?.(b); onClose(); }}
+                      className="w-full flex items-start gap-3 px-5 py-3 hover:bg-orange-50 transition-colors text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
+                        <Camera size={14} className="text-orange-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-semibold text-stone-900 truncate">{b.clientName}</p>
+                          {total > 0 && (
+                            <span className={cn(
+                              "text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
+                              isLunas ? "bg-emerald-100 text-emerald-700" : paid > 0 ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-500"
+                            )}>
+                              {isLunas ? "Lunas" : paid > 0 ? "DP" : "Belum"}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          {b.location && (
+                            <span className="text-xs text-stone-400 flex items-center gap-0.5 truncate max-w-[160px]">
+                              <MapPin size={10} />{b.location}
+                            </span>
+                          )}
+                          {b.bookingEventTypes && b.bookingEventTypes.length > 0 && (
+                            <span className="text-[10px] text-orange-500 font-medium truncate">
+                              {b.bookingEventTypes.map(be => be.eventType.label).join(", ")}
+                            </span>
+                          )}
+                        </div>
+                        {total > 0 && (
+                          <p className="text-[10px] text-stone-500 mt-1">
+                            <span className="font-semibold text-emerald-600">Bayar Rp {paid.toLocaleString("id-ID")}</span>
+                            {sisa > 0 && <span className="text-stone-400"> · Sisa Rp {sisa.toLocaleString("id-ID")}</span>}
+                          </p>
                         )}
                       </div>
-                    </div>
-                    <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full shrink-0">WCC</span>
-                  </button>
-                ))}
+                      <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full shrink-0">WCC</span>
+                    </button>
+                  );
+                })}
 
-                {allOrders.map((o) => (
-                  <button
-                    key={o.id}
-                    onClick={() => { onSelectOrder?.(o); onClose(); }}
-                    className="w-full flex items-start gap-3 px-5 py-3 hover:bg-cyan-50 transition-colors text-left"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-cyan-100 flex items-center justify-center shrink-0">
-                      <Square size={14} className="text-cyan-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-stone-900 truncate">{o.clientName}</p>
-                      {o.acrylicText && (
-                        <p className="text-xs text-stone-400 truncate mt-0.5">{o.acrylicText.split("\n")[0]}</p>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-medium text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-full shrink-0">Acrylic</span>
-                  </button>
-                ))}
+                {allOrders.map((o) => {
+                  const paid = orderPaid(o);
+                  const total = o.totalPrice ?? 0;
+                  const sisa = Math.max(0, total - paid);
+                  const isLunas = total > 0 && paid >= total;
+                  return (
+                    <button
+                      key={o.id}
+                      onClick={() => { onSelectOrder?.(o); onClose(); }}
+                      className="w-full flex items-start gap-3 px-5 py-3 hover:bg-cyan-50 transition-colors text-left"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-cyan-100 flex items-center justify-center shrink-0">
+                        <Square size={14} className="text-cyan-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-semibold text-stone-900 truncate">{o.clientName}</p>
+                          {total > 0 && (
+                            <span className={cn(
+                              "text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
+                              isLunas ? "bg-emerald-100 text-emerald-700" : paid > 0 ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-500"
+                            )}>
+                              {isLunas ? "Lunas" : paid > 0 ? "DP" : "Belum"}
+                            </span>
+                          )}
+                        </div>
+                        {o.acrylicText && (
+                          <p className="text-xs text-stone-400 truncate mt-0.5">{o.acrylicText.split("\n")[0]}</p>
+                        )}
+                        {total > 0 && (
+                          <p className="text-[10px] text-stone-500 mt-1">
+                            <span className="font-semibold text-cyan-600">Bayar Rp {paid.toLocaleString("id-ID")}</span>
+                            {sisa > 0 && <span className="text-stone-400"> · Sisa Rp {sisa.toLocaleString("id-ID")}</span>}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-medium text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-full shrink-0">Acrylic</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>

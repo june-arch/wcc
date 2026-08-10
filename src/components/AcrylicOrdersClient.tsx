@@ -50,6 +50,20 @@ export default function AcrylicOrdersClient({ initialOrders }: { initialOrders: 
     return () => window.removeEventListener('edit-acrylic', handleEdit as EventListener);
   }, []);
 
+  // Auto-select order dari query param ?detail=<id> (dari modal kalender dashboard)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const detailId = params.get("detail");
+    if (detailId) {
+      const found = orders.find((o) => o.id === detailId);
+      if (found) {
+        setSelectedOrder(found);
+        // bersihkan URL biar refresh tidak auto-open lagi
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+  }, [orders]);
+
   // ─── Filtered list ───────────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     return orders.filter((o) => {

@@ -1,6 +1,7 @@
 "use client";
 // src/components/DashboardClient.tsx
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays, CheckCircle2, Clock,
   ArrowRight, Camera, Banknote, Square
@@ -351,6 +352,7 @@ function UnifiedCalendar({
   allBookings: BookingWithRelations[];
   allAcrylicOrders: AcrylicOrderWithRelations[];
 }) {
+  const router = useRouter();
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
@@ -489,6 +491,8 @@ function UnifiedCalendar({
           acrylicOrders={selectedAcrylic}
           type="mixed"
           onClose={() => setSelectedDay(null)}
+          onSelectBooking={(b) => router.push(`/dashboard/bookings?detail=${b.id}`)}
+          onSelectOrder={(o) => router.push(`/dashboard/acrylic?detail=${o.id}`)}
         />
       )}
     </div>
