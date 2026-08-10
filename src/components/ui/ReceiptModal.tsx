@@ -92,7 +92,7 @@ export default function ReceiptModal({
             />
           </div>
           {/* Aksi (tidak ikut tercetak) */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100 shrink-0 print:hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100 shrink-0 print:hidden relative z-10">
             <p className="text-sm font-semibold text-stone-700">Kwitansi Pembayaran</p>
             <div className="flex items-center gap-2">
               <button
@@ -111,7 +111,7 @@ export default function ReceiptModal({
           </div>
 
           {/* Isi kwitansi (yang tercetak) */}
-          <div className="px-5 py-5 flex-1 overflow-y-auto min-h-0 bg-white text-stone-900 relative z-10">
+          <div className="px-5 py-5 flex-1 overflow-y-auto overscroll-contain min-h-0 text-stone-900 relative z-10">
 
             {/* Kop */}
             <div className="text-center border-b-2 border-dashed border-stone-300 pb-3 mb-4 relative">
@@ -191,7 +191,7 @@ export default function ReceiptModal({
               </div>
               <div>
                 <p className="text-stone-400 mb-1">Penerima,</p>
-                {/* TTD dengan stempel menimpa di atasnya */}
+                {/* TTD dengan stempel menimpa sebagian (kanan-bawah), TTD tetap terlihat */}
                 <div className="relative inline-block mb-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -203,7 +203,7 @@ export default function ReceiptModal({
                   <img
                     src="/stempel-wcc.png"
                     alt="Stempel"
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 object-contain opacity-90"
+                    className="absolute right-0 bottom-0 translate-x-1/4 translate-y-1/4 h-12 w-12 object-contain opacity-90"
                   />
                 </div>
                 <p className="font-bold">{receiver || "Riska Yulanda Saputri"}</p>
