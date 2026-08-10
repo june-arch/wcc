@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { cn, formatDate, formatDateRange, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil } from "@/lib/utils";
 import { FormattedNumberInput } from "./ui/FormattedNumberInput";
+import ReceiptModal from "./ui/ReceiptModal";
 import type { BookingWithRelations, Payment } from "@/types";
 import toast from "react-hot-toast";
 
@@ -30,6 +31,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
   const [newPayment, setNewPayment] = useState("");
   const [addingPayment, setAddingPayment] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [receipt, setReceipt] = useState<Payment | null>(null);
 
   // Calculate totals from new schema
   const packagePrice = booking.pricePackage?.price || 0;
@@ -78,6 +80,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
       bookingId: booking.id,
       amount,
       note: null,
+      receiptNumber: null,
       paidAt: new Date().toISOString(),
     };
     onPatch(booking.id, {
@@ -110,6 +113,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
   };
 
   return (
+    <>
     <div
       className="card overflow-hidden flex flex-col h-full lg:h-auto"
       style={{ maxHeight: "calc(100vh - 140px)", position: "sticky", top: 0 }}
@@ -344,10 +348,23 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
                         <div>
                           <p className="text-sm font-semibold text-emerald-800">+Rp {p.amount.toLocaleString("id-ID")}</p>
                           {p.note && <p className="text-xs text-emerald-600">{p.note}</p>}
+                          {p.receiptNumber && (
+                            <p className="text-[10px] font-mono text-emerald-500 mt-0.5">{p.receiptNumber}</p>
+                          )}
                         </div>
-                        <p className="text-xs text-emerald-600">
-                          {isTemp ? "Menyimpan..." : formatDate(p.paidAt)}
-                        </p>
+                        <div className="flex flex-col items-end gap-1">
+                          <p className="text-xs text-emerald-600">
+                            {isTemp ? "Menyimpan..." : formatDate(p.paidAt)}
+                          </p>
+                          {p.receiptNumber && !isTemp && (
+                            <button
+                              onClick={() => setReceipt(p)}
+                              className="text-[10px] font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded-full transition-colors"
+                            >
+                              Kwitansi
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -358,6 +375,20 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
         )}
       </div>
     </div>
+
+    {/* Kwitansi — cetak ulang dari detail booking */}
+    <ReceiptModal
+      open={!!receipt}
+      onClose={() => setReceipt(null)}
+      receiptNumber={receipt?.receiptNumber ?? ""}
+      clientName={booking.clientName}
+      amount={receipt?.amount ?? 0}
+      purpose={receipt?.note || `Pembayaran ${booking.pricePackage?.name ?? "Booking WCC"}`}
+      eventDate={booking.startDate instanceof Date ? booking.startDate.toISOString() : (booking.startDate as string) || null}
+      paidAt={receipt?.paidAt ?? new Date()}
+      receiver={booking.createdBy?.name || "WCC Oranye Capture"}
+    />
+    </>
   );
 }
 

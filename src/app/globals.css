@@ -232,3 +232,23 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.02em; color: var(-
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* Print: hanya kwitansi yang tampil saat mencetak */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-print,
+  #receipt-print * {
+    visibility: visible;
+  }
+  #receipt-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-height: none;
+    box-shadow: none;
+    border-radius: 0;
+  }
+}

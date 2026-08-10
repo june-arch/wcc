@@ -1,11 +1,12 @@
 "use client";
 // src/components/BookingModal.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Loader2, Package, Check, Plus, Minus, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ResponsiveModal from "./ui/ResponsiveModal";
+import ReceiptModal from "./ui/ReceiptModal";
 import { FormattedNumberInput } from "./ui/FormattedNumberInput";
-import type { BookingWithRelations, PricePackage, AddOn } from "@/types";
+import type { BookingWithRelations, PricePackage, AddOn, Payment } from "@/types";
 import toast from "react-hot-toast";
 
 const EVENT_TYPES = ["PENGAJIAN", "AKAD_MALAM", "AKAD_SIANG", "RESEPSI", "TAMAT_KAJI", "LAINNYA"];
@@ -25,12 +26,14 @@ interface Props {
 
 export default function BookingModal({ onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
+  const bookingDraftRef = useRef<BookingWithRelations | null>(null);
   const [pricePackages, setPricePackages] = useState<PricePackage[]>([]);
   const [addOns, setAddOns] = useState<AddOn[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<PricePackage | null>(null);
   const [selectedAddOns, setSelectedAddOns] = useState<AddOn[]>([]);
   const [showPackageSelector, setShowPackageSelector] = useState(false);
   const [showAddOnSelector, setShowAddOnSelector] = useState(false);
+  const [receipt, setReceipt] = useState<Payment | null>(null);
 
   const [form, setForm] = useState({
     clientName: "",
@@ -128,8 +131,12 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
       });
       if (!res.ok) throw new Error();
       const newBooking: BookingWithRelations = await res.json();
+      bookingDraftRef.current = newBooking;
       toast.success(`Booking ${newBooking.clientName} berhasil ditambahkan!`);
-      onSuccess(newBooking);
+      // Tampilkan kwitansi jika ada DP
+      const dpPayment = newBooking.payments?.find((p) => p.note === "DP/ Pembayaran pertama");
+      if (dpPayment?.receiptNumber) setReceipt(dpPayment);
+      else onSuccess(newBooking);
     } catch {
       toast.error("Gagal menambah booking");
     } finally {
@@ -138,6 +145,7 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
   };
 
   return (
+    <>
     <ResponsiveModal
       isOpen={true}
       onClose={onClose}
@@ -539,5 +547,22 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
         </div>
       </ResponsiveModal>
     </ResponsiveModal>
+
+    {/* Kwitansi DP — muncul setelah booking + DP berhasil disimpan */}
+    <ReceiptModal
+      open={!!receipt}
+      onClose={() => {
+        setReceipt(null);
+        onSuccess(bookingDraftRef.current ?? ({} as BookingWithRelations));
+      }}
+      receiptNumber={receipt?.receiptNumber ?? ""}
+      clientName={form.clientName.trim()}
+      amount={receipt?.amount ?? 0}
+      purpose={`DP ${selectedPackage?.name ?? "Booking WCC"}${form.hashtag ? ` — ${form.hashtag}` : ""}`}
+      eventDate={form.startDate || null}
+      paidAt={receipt?.paidAt ?? new Date()}
+      receiver="WCC Oranye Capture"
+    />
+    </>
   );
 }

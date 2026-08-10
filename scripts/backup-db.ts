@@ -1,82 +1,57 @@
-// scripts/backup-db.ts
+// scripts/backup-db.ts — Full JSON backup of all WCC tables (safe, read-only)
 // Usage: npx ts-node scripts/backup-db.ts
-// Exports all tables to JSON backup file
-
 import { PrismaClient } from "@prisma/client";
-import fs from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 
 const prisma = new PrismaClient();
 
-async function backup() {
-  const backupDir = path.join(process.cwd(), "backups");
-  if (!fs.existsSync(backupDir)) {
-    fs.mkdirSync(backupDir, { recursive: true });
+async function main() {
+  const tables = {
+    users: () => prisma.user.findMany(),
+    sessions: () => prisma.session.findMany(),
+    accounts: () => prisma.account.findMany(),
+    verifications: () => prisma.verification.findMany(),
+    bookings: () => prisma.booking.findMany(),
+    payments: () => prisma.payment.findMany(),
+    eventTypes: () => prisma.eventType.findMany(),
+    pricePackages: () => prisma.pricePackage.findMany(),
+    bookingEventTypes: () => prisma.bookingEventType.findMany(),
+    packageEventTypes: () => prisma.packageEventType.findMany(),
+    addOns: () => prisma.addOn.findMany(),
+    bookingAddOns: () => prisma.bookingAddOn.findMany(),
+    panelTypes: () => prisma.panelType.findMany(),
+    acrylicOrders: () => prisma.acrylicOrder.findMany(),
+    acrylicPayments: () => prisma.acrylicPayment.findMany(),
+  };
+
+  const result: Record<string, unknown[]> = {};
+  for (const [name, fn] of Object.entries(tables)) {
+    result[name] = await fn();
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const backupPath = path.join(backupDir, `backup-${timestamp}.json`);
-
-  console.log("📦 Backing up WCC database...");
-
-  const [users, sessions, accounts, bookings, payments, pricePackages, eventTypes,
-    bookingEventTypes, packageEventTypes, addOns, bookingAddOns] = await Promise.all([
-    prisma.user.findMany(),
-    prisma.session.findMany(),
-    prisma.account.findMany(),
-    prisma.booking.findMany({
-      include: {
-        payments: true,
-        pricePackage: true,
-        bookingAddOns: { include: { addOn: true } },
-        bookingEventTypes: { include: { eventType: true } },
-      },
-    }),
-    prisma.payment.findMany(),
-    prisma.pricePackage.findMany({ include: { packageEventTypes: { include: { eventType: true } } } }),
-    prisma.eventType.findMany(),
-    prisma.bookingEventType.findMany(),
-    prisma.packageEventType.findMany(),
-    prisma.addOn.findMany(),
-    prisma.bookingAddOn.findMany(),
-  ]);
-
+  const now = new Date();
+  const ts = now.toISOString().replace(/\.\d{3}Z$/, "Z").replace(/[:]/g, "-").replace("T", "T");
   const backup = {
-    timestamp,
+    timestamp: ts,
     version: "wcc-standalone-backup",
-    tables: {
-      users,
-      sessions,
-      accounts,
-      bookings,
-      payments,
-      pricePackages,
-      eventTypes,
-      bookingEventTypes,
-      packageEventTypes,
-      addOns,
-      bookingAddOns,
-    },
+    tables: result,
   };
 
-  fs.writeFileSync(backupPath, JSON.stringify(backup, null, 2), "utf-8");
+  const dir = path.join(process.cwd(), "backups");
+  const file = path.join(dir, `backup-${ts}.json`);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(file, JSON.stringify(backup, null, 2), "utf-8");
 
-  const stats = {
-    users: users.length,
-    bookings: bookings.length,
-    payments: payments.length,
-    pricePackages: pricePackages.length,
-    eventTypes: eventTypes.length,
-    addOns: addOns.length,
-  };
-
-  console.log(`✅ Backup saved to: backups/backup-${timestamp}.json`);
-  console.log(`📊 Stats:`, stats);
-
-  await prisma.$disconnect();
+  console.log(`✅ Backup tersimpan: ${file}`);
+  for (const [name, rows] of Object.entries(result)) {
+    console.log(`   ${name}: ${rows.length} rows`);
+  }
 }
 
-backup().catch((e) => {
-  console.error("❌ Backup failed:", e);
-  process.exit(1);
-});
+main()
+  .catch((e) => {
+    console.error("❌ Backup gagal:", e.message);
+    process.exit(1);
+  })
+  .finally(() => prisma.$disconnect());

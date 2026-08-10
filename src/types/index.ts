@@ -26,6 +26,7 @@ export type Payment = {
   bookingId: string;
   amount: number;
   note: string | null;
+  receiptNumber: string | null;
   paidAt: Date | string;
 };
 

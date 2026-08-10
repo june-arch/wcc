@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { generateReceiptNumber } from "@/lib/receipt";
 
 export async function GET(req: NextRequest) {
   try {
@@ -117,6 +118,7 @@ export async function POST(req: NextRequest) {
               amount: initialPayment,
               paidAt: new Date(),
               note: "DP/ Pembayaran pertama",
+              receiptNumber: await generateReceiptNumber(),
             },
           },
         }),

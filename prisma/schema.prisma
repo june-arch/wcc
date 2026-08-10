@@ -179,13 +179,14 @@ model BookingAddOn {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  bookingId String
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  amount    Int
-  note      String?
-  paidAt    DateTime @default(now())
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  bookingId     String
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount        Int
+  note          String?
+  receiptNumber String?  @unique
+  paidAt        DateTime @default(now())
+  createdAt     DateTime @default(now())
 
   @@map("payments")
 }

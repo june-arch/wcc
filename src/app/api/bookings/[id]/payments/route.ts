@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { generateReceiptNumber } from "@/lib/receipt";
 
 export async function POST(
   req: NextRequest,
@@ -21,6 +22,7 @@ export async function POST(
         bookingId: id,
         amount: body.amount,
         note: body.note ?? null,
+        receiptNumber: await generateReceiptNumber(),
         paidAt: body.paidAt ? new Date(body.paidAt) : new Date(),
       },
     });
