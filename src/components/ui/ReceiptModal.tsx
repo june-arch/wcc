@@ -195,23 +195,26 @@ export default function ReceiptModal({
               {/* Kanan: Penerima */}
               <div>
                 <p className="text-stone-400 mb-2">Penerima,</p>
-                {/* TTD (besar) + stempel di kiri sejajar, setengah nutup */}
-                <div className="relative h-16 flex items-end justify-center mb-1">
+                {/* TTD + stempel: inline-block agar stempel nempel di sisi kiri TTD */}
+                <div className="relative inline-block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/ttd-riska.png"
                     alt="Tanda tangan"
                     className="h-16 w-auto object-contain"
                   />
+                  {/* Stempel nempel kiri TTD, setengah nutup */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/stempel-wcc.png"
                     alt="Stempel"
                     className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[4.5rem] w-[4.5rem] object-contain opacity-90"
                   />
+                  {/* Nama penerima — absolute di bawah TTD, nimpa sedikit */}
+                  <p className="absolute left-1/2 -translate-x-1/2 top-full -mt-3 font-bold whitespace-nowrap">
+                    {receiver || "Riska Yulanda Saputri"}
+                  </p>
                 </div>
-                {/* -mt-3: bawah TTD nimpa nama sedikit */}
-                <p className="font-bold -mt-3">{receiver || "Riska Yulanda Saputri"}</p>
               </div>
             </div>
           </div>
