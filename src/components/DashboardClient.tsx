@@ -208,7 +208,7 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
                 return (
                   <Link
                     key={b.id}
-                    href={isAcrylic ? `/dashboard/acrylic?id=${b.id}` : `/dashboard/bookings?id=${b.id}`}
+                    href={isAcrylic ? `/dashboard/acrylic?detail=${b.id}` : `/dashboard/bookings?detail=${b.id}`}
                     className="flex items-center gap-3 p-3 bg-white rounded-xl border border-purple-100 hover:border-purple-300 hover:shadow-sm transition-all"
                   >
                     <div className="w-10 h-10 rounded-lg bg-purple-50 flex flex-col items-center justify-center shrink-0 border border-purple-100">
@@ -268,7 +268,7 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
               return (
                 <Link
                   key={b.id}
-                  href={isAcrylic ? `/dashboard/acrylic?id=${b.id}` : `/dashboard/bookings?id=${b.id}`}
+                  href={isAcrylic ? `/dashboard/acrylic?detail=${b.id}` : `/dashboard/bookings?detail=${b.id}`}
                   className="flex items-start sm:items-center gap-3 px-3 sm:px-5 py-3.5 hover:bg-stone-50 transition-colors"
                 >
                   <div className={cn(
