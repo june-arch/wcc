@@ -560,8 +560,11 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
       amount={receipt?.amount ?? 0}
       purpose={`DP ${selectedPackage?.name ?? "Booking WCC"}${form.hashtag ? ` — ${form.hashtag}` : ""}`}
       eventDate={form.startDate || null}
+      eventDateEnd={form.endDate || null}
+      totalAmount={totalPrice}
+      totalPaid={bookingDraftRef.current?.payments?.reduce((s, p) => s + p.amount, 0) ?? receipt?.amount ?? 0}
       paidAt={receipt?.paidAt ?? new Date()}
-      receiver="WCC Oranye Capture"
+      receiver="Riska Yulanda Saputri"
     />
     </>
   );

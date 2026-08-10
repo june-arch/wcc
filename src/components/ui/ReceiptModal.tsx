@@ -13,7 +13,10 @@ interface ReceiptModalProps {
   clientName: string;
   amount: number;
   purpose: string; // misal: "DP Paket Akad & Resepsi (Hari Sama)"
-  eventDate?: string | null;
+  eventDate?: string | null; // tanggal mulai acara
+  eventDateEnd?: string | null; // tanggal akhir acara (untuk acara 2 hari)
+  totalAmount?: number; // total harga booking
+  totalPaid?: number; // total sudah dibayar (untuk hitung sisa)
   paidAt: Date | string;
   payer?: string; // nama yang bayar (default clientName)
   receiver?: string; // nama penerima (dari createdBy / "WCC Oranye Capture")
@@ -27,10 +30,18 @@ export default function ReceiptModal({
   amount,
   purpose,
   eventDate,
+  eventDateEnd,
+  totalAmount,
+  totalPaid,
   paidAt,
   payer = clientName,
   receiver,
 }: ReceiptModalProps) {
+  // sisa pembayaran (kalau masih DP)
+  const sisa =
+    typeof totalAmount === "number" && typeof totalPaid === "number"
+      ? Math.max(0, totalAmount - totalPaid)
+      : 0;
   useEffect(() => {
     if (!open) return;
     const h = (e: KeyboardEvent) => {
@@ -141,20 +152,57 @@ export default function ReceiptModal({
               {eventDate && (
                 <p className="flex gap-2">
                   <span className="text-stone-400 w-24 shrink-0">Tanggal acara</span>
-                  <span>{format(new Date(eventDate), "d MMMM yyyy", { locale: idLocale })}</span>
+                  <span className="font-semibold">
+                    {format(new Date(eventDate), "d MMMM yyyy", { locale: idLocale })}
+                    {eventDateEnd && format(new Date(eventDateEnd), "yyyy-MM-dd") !== format(new Date(eventDate), "yyyy-MM-dd") && (
+                      <> – {format(new Date(eventDateEnd), "d MMMM yyyy", { locale: idLocale })}</>
+                    )}
+                  </span>
+                </p>
+              )}
+              {/* Sisa pembayaran — hanya muncul kalau masih DP */}
+              {sisa > 0 && (
+                <p className="flex gap-2">
+                  <span className="text-stone-400 w-24 shrink-0">Sisa</span>
+                  <span className="font-semibold text-red-600">
+                    Rp {sisa.toLocaleString("id-ID")}
+                  </span>
+                </p>
+              )}
+              {/* Pelunasan wajib setelah acara selesai */}
+              {eventDateEnd && (
+                <p className="text-[11px] text-stone-500 border-t border-dashed border-stone-200 pt-2 mt-1">
+                  * Pelunasan wajib setelah acara selesai, paling lambat tanggal{" "}
+                  <span className="font-semibold text-stone-700">
+                    {format(new Date(eventDateEnd), "d MMMM yyyy", { locale: idLocale })}
+                  </span>
                 </p>
               )}
             </div>
 
             {/* TTD */}
-            <div className="mt-8 grid grid-cols-2 gap-4 text-center text-xs relative">
+            <div className="mt-6 grid grid-cols-2 gap-4 text-center text-xs relative">
               <div>
                 <p className="text-stone-400 mb-10">Yang menyerahkan,</p>
                 <p className="font-bold">{clientName}</p>
               </div>
               <div>
-                <p className="text-stone-400 mb-10">Penerima,</p>
-                <p className="font-bold">{receiver || "WCC Oranye Capture"}</p>
+                <p className="text-stone-400 mb-2">Penerima,</p>
+                <div className="flex items-center justify-center gap-1 mb-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/ttd-riska.png"
+                    alt="Tanda tangan"
+                    className="h-12 w-auto object-contain"
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/stempel-wcc.png"
+                    alt="Stempel"
+                    className="h-12 w-12 object-contain opacity-90"
+                  />
+                </div>
+                <p className="font-bold">{receiver || "Riska Yulanda Saputri"}</p>
               </div>
             </div>
           </div>

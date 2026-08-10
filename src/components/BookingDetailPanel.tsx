@@ -385,8 +385,11 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
       amount={receipt?.amount ?? 0}
       purpose={receipt?.note || `Pembayaran ${booking.pricePackage?.name ?? "Booking WCC"}`}
       eventDate={booking.startDate instanceof Date ? booking.startDate.toISOString() : (booking.startDate as string) || null}
+      eventDateEnd={booking.endDate instanceof Date ? booking.endDate.toISOString() : (booking.endDate as string) || null}
+      totalAmount={totalPrice}
+      totalPaid={totalPaid}
       paidAt={receipt?.paidAt ?? new Date()}
-      receiver={booking.createdBy?.name || "WCC Oranye Capture"}
+      receiver="Riska Yulanda Saputri"
     />
     </>
   );
