@@ -1,5 +1,6 @@
 "use client";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { X, CalendarDays, MapPin, Square, Camera } from "lucide-react";
@@ -78,7 +79,7 @@ export default function DayDetailModal({
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <>
       <div className="fixed inset-0 bg-black/40 z-[60] animate-fade-in" onClick={onClose} />
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -244,6 +245,7 @@ export default function DayDetailModal({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

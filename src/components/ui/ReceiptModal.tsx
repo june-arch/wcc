@@ -1,6 +1,7 @@
 "use client";
 // src/components/ui/ReceiptModal.tsx
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Printer, X } from "lucide-react";
 import { terbilang } from "@/lib/receipt";
 import { format } from "date-fns";
@@ -71,7 +72,10 @@ export default function ReceiptModal({
 
   if (!open) return null;
 
-  return (
+  // Portal ke document.body — keluar dari stacking context
+  // (PageTransition motion.div & BookingDetailPanel sticky) agar modal
+  // selalu di atas BottomNav (z-50) di halaman mana pun.
+  return createPortal(
     <>
       <div className="fixed inset-0 bg-black/40 z-[60] animate-fade-in" onClick={onClose} />
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
@@ -220,6 +224,7 @@ export default function ReceiptModal({
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
