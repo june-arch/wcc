@@ -148,17 +148,17 @@ export default function ReceiptModal({
                 <span className="font-semibold">{payer}</span>
               </p>
               <p className="flex gap-2">
-                <span className="text-stone-400 w-24 shrink-0">Uang sejumlah</span>
+                <span className="text-stone-400 w-32 shrink-0">Uang sejumlah</span>
                 <span className="font-semibold">Rp {amount.toLocaleString("id-ID")}</span>
               </p>
-              <p className="text-xs text-stone-500 italic pl-26">{terbilang(amount)}</p>
+              <p className="text-xs text-stone-500 italic pl-32">{terbilang(amount)}</p>
               <p className="flex gap-2">
-                <span className="text-stone-400 w-24 shrink-0">Untuk</span>
+                <span className="text-stone-400 w-32 shrink-0">Untuk</span>
                 <span className="font-semibold">{purpose}</span>
               </p>
               {eventDate && (
                 <p className="flex gap-2">
-                  <span className="text-stone-400 w-24 shrink-0">Tanggal acara</span>
+                  <span className="text-stone-400 w-32 shrink-0">Tanggal acara</span>
                   <span className="font-semibold">
                     {format(new Date(eventDate), "d MMMM yyyy", { locale: idLocale })}
                     {eventDateEnd && format(new Date(eventDateEnd), "yyyy-MM-dd") !== format(new Date(eventDate), "yyyy-MM-dd") && (
@@ -170,7 +170,7 @@ export default function ReceiptModal({
               {/* Sisa pembayaran — hanya muncul kalau masih DP */}
               {sisa > 0 && (
                 <p className="flex gap-2">
-                  <span className="text-stone-400 w-24 shrink-0">Sisa</span>
+                  <span className="text-stone-400 w-32 shrink-0">Sisa</span>
                   <span className="font-semibold text-red-600">
                     Rp {sisa.toLocaleString("id-ID")}
                   </span>
