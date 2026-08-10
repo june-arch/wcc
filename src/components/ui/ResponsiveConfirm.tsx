@@ -39,7 +39,7 @@ export default function ResponsiveConfirm({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-white">
+    <div className="fixed inset-0 z-[60] bg-white">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-stone-100">
         <button

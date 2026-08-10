@@ -73,8 +73,8 @@ export default function ReceiptModal({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-50 animate-fade-in" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/40 z-[60] animate-fade-in" onClick={onClose} />
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div
           id="receipt-print"
           className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-slide-up relative"
