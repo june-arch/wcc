@@ -257,4 +257,11 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.02em; color: var(-
     box-shadow: none;
     border-radius: 0;
   }
+
+  /* Watermark: fixed di tengah halaman cetak, sama seperti preview modal */
+  #receipt-print > div:first-child {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 0 !important;
+  }
 }

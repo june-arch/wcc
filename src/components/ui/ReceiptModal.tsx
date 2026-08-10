@@ -77,8 +77,20 @@ export default function ReceiptModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
           id="receipt-print"
-          className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-slide-up"
+          className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90dvh] flex flex-col animate-slide-up relative"
         >
+          {/* Watermark logo — absolute di level card, fixed saat print agar selalu di tengah halaman */}
+          <div
+            className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none"
+            aria-hidden="true"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-kwitansi.png"
+              alt=""
+              className="w-64 h-64 opacity-[0.06] mix-blend-multiply select-none"
+            />
+          </div>
           {/* Aksi (tidak ikut tercetak) */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100 shrink-0 print:hidden">
             <p className="text-sm font-semibold text-stone-700">Kwitansi Pembayaran</p>
@@ -99,16 +111,7 @@ export default function ReceiptModal({
           </div>
 
           {/* Isi kwitansi (yang tercetak) */}
-          <div className="px-5 py-5 flex-1 overflow-y-auto min-h-0 bg-white text-stone-900 relative">
-            {/* Watermark logo */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none print:block" aria-hidden="true">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo-kwitansi.png"
-                alt=""
-                className="w-64 h-64 opacity-[0.06] mix-blend-multiply select-none"
-              />
-            </div>
+          <div className="px-5 py-5 flex-1 overflow-y-auto min-h-0 bg-white text-stone-900 relative z-10">
 
             {/* Kop */}
             <div className="text-center border-b-2 border-dashed border-stone-300 pb-3 mb-4 relative">
@@ -155,7 +158,7 @@ export default function ReceiptModal({
                   <span className="font-semibold">
                     {format(new Date(eventDate), "d MMMM yyyy", { locale: idLocale })}
                     {eventDateEnd && format(new Date(eventDateEnd), "yyyy-MM-dd") !== format(new Date(eventDate), "yyyy-MM-dd") && (
-                      <> – {format(new Date(eventDateEnd), "d MMMM yyyy", { locale: idLocale })}</>
+                      <>, {format(new Date(eventDateEnd), "d MMMM yyyy", { locale: idLocale })}</>
                     )}
                   </span>
                 </p>
@@ -181,14 +184,15 @@ export default function ReceiptModal({
             </div>
 
             {/* TTD */}
-            <div className="mt-6 grid grid-cols-2 gap-4 text-center text-xs relative">
+            <div className="mt-6 grid grid-cols-2 gap-4 text-center text-xs relative z-10">
               <div>
                 <p className="text-stone-400 mb-10">Yang menyerahkan,</p>
                 <p className="font-bold">{clientName}</p>
               </div>
               <div>
-                <p className="text-stone-400 mb-2">Penerima,</p>
-                <div className="flex items-center justify-center gap-1 mb-1">
+                <p className="text-stone-400 mb-1">Penerima,</p>
+                {/* TTD dengan stempel menimpa di atasnya */}
+                <div className="relative inline-block mb-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/ttd-riska.png"
@@ -199,7 +203,7 @@ export default function ReceiptModal({
                   <img
                     src="/stempel-wcc.png"
                     alt="Stempel"
-                    className="h-12 w-12 object-contain opacity-90"
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-16 w-16 object-contain opacity-90"
                   />
                 </div>
                 <p className="font-bold">{receiver || "Riska Yulanda Saputri"}</p>
