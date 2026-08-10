@@ -191,7 +191,7 @@ export default function ReceiptModal({
               </div>
               <div>
                 <p className="text-stone-400 mb-1">Penerima,</p>
-                {/* TTD dengan stempel menimpa sebagian (kanan-bawah), TTD tetap terlihat */}
+                {/* TTD dengan stempel di sebelah kiri sejajar, setengah menutupi TTD */}
                 <div className="relative inline-block mb-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -203,7 +203,7 @@ export default function ReceiptModal({
                   <img
                     src="/stempel-wcc.png"
                     alt="Stempel"
-                    className="absolute right-0 bottom-0 translate-x-1/4 translate-y-1/4 h-12 w-12 object-contain opacity-90"
+                    className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-14 w-14 object-contain opacity-90"
                   />
                 </div>
                 <p className="font-bold">{receiver || "Riska Yulanda Saputri"}</p>
