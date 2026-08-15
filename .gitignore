@@ -39,3 +39,6 @@ prisma/migrations/
 
 # Backup files
 backups/
+
+# AI agent files (jangan di-push ke repo publik)
+.hermes/
