@@ -2,7 +2,7 @@
 // src/components/ExpensesClient.tsx
 import { useMemo, useState } from "react";
 import {
-  Plus, User as UserIcon, Car, Wallet, Pencil, Trash2, Users, Briefcase, Phone, Banknote, ChevronDown, CheckCircle2,
+  Plus, User as UserIcon, Car, Wallet, Pencil, Trash2, Users, Briefcase, Phone, Banknote, ChevronDown, CheckCircle2, Search,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn, formatDate } from "@/lib/utils";
@@ -58,6 +58,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [filter, setFilter] = useState<FilterCat>("ALL");
   const [woOpen, setWoOpen] = useState(false);
+  const [woSearch, setWoSearch] = useState("");
 
   // Expense form modal
   const [expFormOpen, setExpFormOpen] = useState(false);
@@ -89,11 +90,19 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
     [expenses, filter]
   );
 
+  // Pencarian di dropdown "Orderan yang Dikerjakan"
+  const filteredOrders = useMemo(() => {
+    const q = woSearch.trim().toLowerCase();
+    if (!q) return availableOrders;
+    return availableOrders.filter((o) => o.label.toLowerCase().includes(q));
+  }, [availableOrders, woSearch]);
+
   // ─── Expense CRUD ───────────────────────────────────────────────────────────
   const openCreateExpense = () => {
     setEditingExpense(null);
     setExpForm({ ...emptyExpenseForm(), employeeId: activeEmployees[0]?.id || "" });
     setWoOpen(false);
+    setWoSearch("");
     setExpFormOpen(true);
   };
 
@@ -117,6 +126,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
       note: e.note || "",
     });
     setWoOpen(false);
+    setWoSearch("");
     setExpFormOpen(true);
   };
 
@@ -482,34 +492,49 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
                 <ChevronDown size={14} className={cn("shrink-0 transition-transform text-stone-400", woOpen && "rotate-180")} />
               </button>
               {woOpen && (
-                <div className="mt-2 border border-stone-200 rounded-lg max-h-56 overflow-y-auto overscroll-contain divide-y divide-stone-50">
-                  {availableOrders.length === 0 ? (
-                    <p className="p-3 text-xs text-stone-400">Belum ada orderan yang lewat dari hari ini</p>
-                  ) : (
-                    availableOrders.map((o) => {
-                      const checked = expForm.workOrderIds.includes(o.id);
-                      return (
-                        <label
-                          key={o.id}
-                          className={cn(
-                            "flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-stone-50 transition-colors",
-                            checked && "bg-orange-50/60"
-                          )}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => toggleWorkOrder(o.id)}
-                            className="w-4 h-4 accent-orange-500 shrink-0"
-                          />
-                          <span className={cn("text-sm truncate", checked ? "text-stone-900 font-medium" : "text-stone-600")}>
-                            {o.label}
-                          </span>
-                          {checked && <CheckCircle2 size={14} className="text-orange-500 ml-auto shrink-0" />}
-                        </label>
-                      );
-                    })
-                  )}
+                <div className="mt-2 border border-stone-200 rounded-lg overflow-hidden">
+                  <div className="relative border-b border-stone-100 bg-stone-50/60">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <input
+                      type="text"
+                      placeholder="Cari orderan..."
+                      value={woSearch}
+                      onChange={(e) => setWoSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 text-sm bg-transparent outline-none placeholder:text-stone-400"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="max-h-52 overflow-y-auto overscroll-contain divide-y divide-stone-50">
+                    {availableOrders.length === 0 ? (
+                      <p className="p-3 text-xs text-stone-400">Belum ada orderan yang lewat dari hari ini</p>
+                    ) : filteredOrders.length === 0 ? (
+                      <p className="p-3 text-xs text-stone-400">Tidak ada hasil untuk &quot;{woSearch}&quot;</p>
+                    ) : (
+                      filteredOrders.map((o) => {
+                        const checked = expForm.workOrderIds.includes(o.id);
+                        return (
+                          <label
+                            key={o.id}
+                            className={cn(
+                              "flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-stone-50 transition-colors",
+                              checked && "bg-orange-50/60"
+                            )}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleWorkOrder(o.id)}
+                              className="w-4 h-4 accent-orange-500 shrink-0"
+                            />
+                            <span className={cn("text-sm truncate", checked ? "text-stone-900 font-medium" : "text-stone-600")}>
+                              {o.label}
+                            </span>
+                            {checked && <CheckCircle2 size={14} className="text-orange-500 ml-auto shrink-0" />}
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               )}
               {expForm.workOrderIds.length > 0 && (

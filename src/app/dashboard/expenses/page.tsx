@@ -37,13 +37,15 @@ export default async function ExpensesPage() {
       id: b.id,
       label: `${b.clientName} · ${shortDate(b.startDate)} · WCC`,
       type: "wcc" as const,
+      date: b.startDate.getTime(),
     })),
     ...pastAcrylicOrders.map((o) => ({
       id: o.id,
       label: `${o.clientName} · ${shortDate(o.eventDate)} · Acrylic`,
       type: "acrylic" as const,
+      date: o.eventDate.getTime(),
     })),
-  ].sort((a, b) => (a.label < b.label ? 1 : -1));
+  ].sort((a, b) => b.date - a.date); // terbaru → terlama
 
   return (
     <ExpensesClient

@@ -166,6 +166,7 @@ export type AvailableOrder = {
   id: string;
   label: string;
   type: "wcc" | "acrylic";
+  date: number; // timestamp event (untuk sort terbaru → terlama)
 };
 
 export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = {
