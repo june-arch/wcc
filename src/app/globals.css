@@ -75,6 +75,34 @@ h1, h2, h3, h4, h5, h6 { font-weight: 600; letter-spacing: -0.02em; color: var(-
 }
 .input-base::placeholder { color: var(--text-tertiary); }
 
+/* ── Input (alias .input-base, dipakai halaman pengeluaran dll) ── */
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: white;
+  color: var(--text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+.input::placeholder { color: var(--text-tertiary); }
+
+/* ── Label form ── */
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
 /* ── Button base ── */
 .btn {
   display: inline-flex;
