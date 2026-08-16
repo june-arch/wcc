@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { date, amount, category, employeeId, note, workPeriod } = body;
+  const { date, amount, category, employeeId, note, workOrders } = body;
 
   if (!date || amount == null || amount === "") {
     return NextResponse.json({ error: "Tanggal dan nominal wajib diisi" }, { status: 400 });
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const expense = await prisma.expense.create({
     data: {
       date: new Date(date),
-      workPeriod: workPeriod?.trim() || null,
+      workOrders: Array.isArray(workOrders) ? workOrders.map((w: string) => w.trim()).filter(Boolean) : [],
       amount: Number(amount),
       category: cat,
       employeeId: cat === "SALARY" ? employeeId : null,

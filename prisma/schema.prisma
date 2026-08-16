@@ -276,7 +276,7 @@ model Employee {
 model Expense {
   id         String          @id @default(cuid())
   date       DateTime // tanggal payout/pengeluaran (bebas)
-  workPeriod String? // periode tanggal kerja (freetext, utk gaji: mis. "1-15 Agustus 2026")
+  workOrders String[] // daftar orderan yang dikerjakan (label snapshot: "Klien · Tanggal · WCC/Acrylic"), multi-select dari orderan lampau
   amount     Int // nominal rupiah
   category   ExpenseCategory @default(OTHER)
   employeeId String?

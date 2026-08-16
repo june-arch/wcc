@@ -152,7 +152,7 @@ export type Employee = {
 export type Expense = {
   id: string;
   date: Date | string;
-  workPeriod: string | null;
+  workOrders: string[];
   amount: number;
   category: ExpenseCategory;
   employeeId: string | null;
@@ -160,6 +160,12 @@ export type Expense = {
   note: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
+};
+
+export type AvailableOrder = {
+  id: string;
+  label: string;
+  type: "wcc" | "acrylic";
 };
 
 export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = {

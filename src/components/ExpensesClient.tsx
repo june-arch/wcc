@@ -2,17 +2,18 @@
 // src/components/ExpensesClient.tsx
 import { useMemo, useState } from "react";
 import {
-  Plus, User as UserIcon, Car, Wallet, Pencil, Trash2, Users, Briefcase, Phone, Banknote,
+  Plus, User as UserIcon, Car, Wallet, Pencil, Trash2, Users, Briefcase, Phone, Banknote, ChevronDown, CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn, formatDate } from "@/lib/utils";
-import { EXPENSE_CATEGORY_LABEL, type Expense, type Employee, type ExpenseCategory } from "@/types";
+import { EXPENSE_CATEGORY_LABEL, type Expense, type Employee, type ExpenseCategory, type AvailableOrder } from "@/types";
 import ResponsiveModal from "./ui/ResponsiveModal";
 import ResponsiveConfirm from "./ui/ResponsiveConfirm";
 
 interface Props {
   initialExpenses: Expense[];
   initialEmployees: Employee[];
+  availableOrders: AvailableOrder[];
 }
 
 type Tab = "expenses" | "employees";
@@ -45,17 +46,18 @@ const emptyExpenseForm = () => ({
   amount: "",
   category: "SALARY" as ExpenseCategory,
   employeeId: "",
-  workPeriod: "",
+  workOrderIds: [] as string[],
   note: "",
 });
 
 const emptyEmpForm = () => ({ name: "", position: "", phone: "", salary: "", isActive: true });
 
-export default function ExpensesClient({ initialExpenses, initialEmployees }: Props) {
+export default function ExpensesClient({ initialExpenses, initialEmployees, availableOrders }: Props) {
   const [tab, setTab] = useState<Tab>("expenses");
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [filter, setFilter] = useState<FilterCat>("ALL");
+  const [woOpen, setWoOpen] = useState(false);
 
   // Expense form modal
   const [expFormOpen, setExpFormOpen] = useState(false);
@@ -91,7 +93,17 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
   const openCreateExpense = () => {
     setEditingExpense(null);
     setExpForm({ ...emptyExpenseForm(), employeeId: activeEmployees[0]?.id || "" });
+    setWoOpen(false);
     setExpFormOpen(true);
+  };
+
+  const toggleWorkOrder = (id: string) => {
+    setExpForm((f) => ({
+      ...f,
+      workOrderIds: f.workOrderIds.includes(id)
+        ? f.workOrderIds.filter((x) => x !== id)
+        : [...f.workOrderIds, id],
+    }));
   };
 
   const openEditExpense = (e: Expense) => {
@@ -101,9 +113,10 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
       amount: String(e.amount),
       category: e.category,
       employeeId: e.employeeId || "",
-      workPeriod: e.workPeriod || "",
+      workOrderIds: availableOrders.filter((o) => e.workOrders.includes(o.label)).map((o) => o.id),
       note: e.note || "",
     });
+    setWoOpen(false);
     setExpFormOpen(true);
   };
 
@@ -123,7 +136,9 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
         amount: Number(expForm.amount),
         category: expForm.category,
         employeeId: expForm.category === "SALARY" ? expForm.employeeId : null,
-        workPeriod: expForm.workPeriod || null,
+        workOrders: expForm.workOrderIds
+          .map((id) => availableOrders.find((o) => o.id === id)?.label)
+          .filter((l): l is string => !!l),
         note: expForm.note || null,
       };
       const res = await fetch(editingExpense ? `/api/expenses/${editingExpense.id}` : "/api/expenses", {
@@ -309,7 +324,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
                           <p className="font-semibold text-stone-900 text-sm truncate">{title}</p>
                           <p className="text-xs text-stone-400">
                             {formatDate(e.date)}
-                            {e.workPeriod ? ` · Kerja: ${e.workPeriod}` : ""}
+                            {e.workOrders.length > 0 ? ` · Kerja: ${e.workOrders.join(", ")}` : ""}
                             {e.note ? ` · ${e.note}` : ""}
                           </p>
                         </div>
@@ -453,14 +468,66 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
 
           {expForm.category === "SALARY" && (
             <div>
-              <label className="label">Tanggal Kerja <span className="text-stone-300">(opsional)</span></label>
-              <input
-                type="text"
-                placeholder="Mis. 1-15 Agustus 2026"
-                value={expForm.workPeriod}
-                onChange={(e) => setExpForm((f) => ({ ...f, workPeriod: e.target.value }))}
-                className="input"
-              />
+              <label className="label">Orderan yang Dikerjakan</label>
+              <button
+                type="button"
+                onClick={() => setWoOpen((o) => !o)}
+                className="input text-left flex items-center justify-between gap-2"
+              >
+                <span className={cn("truncate", expForm.workOrderIds.length === 0 && "text-stone-400")}>
+                  {expForm.workOrderIds.length === 0
+                    ? "Pilih orderan (yang sudah lewat)"
+                    : `${expForm.workOrderIds.length} orderan dipilih`}
+                </span>
+                <ChevronDown size={14} className={cn("shrink-0 transition-transform text-stone-400", woOpen && "rotate-180")} />
+              </button>
+              {woOpen && (
+                <div className="mt-2 border border-stone-200 rounded-lg max-h-56 overflow-y-auto overscroll-contain divide-y divide-stone-50">
+                  {availableOrders.length === 0 ? (
+                    <p className="p-3 text-xs text-stone-400">Belum ada orderan yang lewat dari hari ini</p>
+                  ) : (
+                    availableOrders.map((o) => {
+                      const checked = expForm.workOrderIds.includes(o.id);
+                      return (
+                        <label
+                          key={o.id}
+                          className={cn(
+                            "flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-stone-50 transition-colors",
+                            checked && "bg-orange-50/60"
+                          )}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleWorkOrder(o.id)}
+                            className="w-4 h-4 accent-orange-500 shrink-0"
+                          />
+                          <span className={cn("text-sm truncate", checked ? "text-stone-900 font-medium" : "text-stone-600")}>
+                            {o.label}
+                          </span>
+                          {checked && <CheckCircle2 size={14} className="text-orange-500 ml-auto shrink-0" />}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+              {expForm.workOrderIds.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {expForm.workOrderIds.map((id) => {
+                    const o = availableOrders.find((x) => x.id === id);
+                    if (!o) return null;
+                    return (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-medium"
+                      >
+                        {o.label}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
