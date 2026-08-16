@@ -8,6 +8,18 @@ export const revalidate = 0;
 const shortDate = (d: Date) =>
   d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
+// Tanggal event + tanggal selesai kalau beda hari, dipisah koma (pola kwitansi)
+const eventDateLabel = (start: Date, end: Date | null) => {
+  const s = shortDate(start);
+  if (!end) return s;
+  const e = new Date(end);
+  const sameDay =
+    e.getFullYear() === start.getFullYear() &&
+    e.getMonth() === start.getMonth() &&
+    e.getDate() === start.getDate();
+  return sameDay ? s : `${s}, ${shortDate(e)}`;
+};
+
 export default async function ExpensesPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -35,7 +47,7 @@ export default async function ExpensesPage() {
   const availableOrders: AvailableOrder[] = [
     ...pastBookings.map((b) => ({
       id: b.id,
-      label: `${b.clientName} · ${shortDate(b.startDate)} · WCC`,
+      label: `${b.clientName} · ${eventDateLabel(b.startDate, b.endDate)} · WCC`,
       type: "wcc" as const,
       date: b.startDate.getTime(),
     })),
