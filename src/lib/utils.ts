@@ -19,6 +19,21 @@ export function formatCurrency(amount: number): string {
   return `Rp ${amount.toLocaleString("id-ID")}`;
 }
 
+// Awal hari ini dalam WIB (Asia/Jakarta) sebagai Date UTC.
+// PENTING: Vercel server berjalan di timezone UTC — `new Date(); setHours(0,0,0,0)` di server
+// menghitung "hari ini" berdasarkan UTC (bisa beda hari dengan WIB), membuat filter
+// tanggal (mis. "orderan sudah lewat") salah di production. Selalu pakai helper ini
+// untuk batas "hari ini" yang mengikuti zona waktu bisnis Indonesia.
+export function startOfTodayWIB(): Date {
+  const wib = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date()); // "2026-08-17"
+  return new Date(`${wib}T00:00:00+07:00`); // 17 Agu 00:00 WIB → UTC 16 Agu 17:00
+}
+
 export function formatEventTypes(types: string[]): string {
   return types
     .map((t) =>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import DashboardClient from "@/components/DashboardClient";
+import { startOfTodayWIB } from "@/lib/utils";
 
 export const revalidate = 0;
 
@@ -92,8 +93,8 @@ export default async function DashboardPage() {
   const netProfitMonth = paidThisMonth - expensesMonth;
 
   // Upcoming — combine both, sort by date
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Batas "hari ini" dalam WIB (Vercel server = UTC — setHours lokal server salah hari)
+  const today = startOfTodayWIB();
 
   const upcomingBookings = [...allBookings, ...allAcrylicOrders.map(o => ({
     ...o,

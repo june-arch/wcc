@@ -1,6 +1,7 @@
 // src/app/dashboard/expenses/page.tsx
 import { prisma } from "@/lib/prisma";
 import ExpensesClient from "@/components/ExpensesClient";
+import { startOfTodayWIB } from "@/lib/utils";
 import type { AvailableOrder } from "@/types";
 
 export const revalidate = 0;
@@ -21,8 +22,8 @@ const eventDateLabel = (start: Date, end: Date | null) => {
 };
 
 export default async function ExpensesPage() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Batas "hari ini" dalam WIB — jangan pakai setHours lokal server (Vercel = UTC, salah hari)
+  const today = startOfTodayWIB();
 
   const [expenses, employees, pastBookings, pastAcrylicOrders] = await Promise.all([
     prisma.expense.findMany({
