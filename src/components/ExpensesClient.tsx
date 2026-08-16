@@ -45,6 +45,7 @@ const emptyExpenseForm = () => ({
   amount: "",
   category: "SALARY" as ExpenseCategory,
   employeeId: "",
+  workPeriod: "",
   note: "",
 });
 
@@ -100,6 +101,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
       amount: String(e.amount),
       category: e.category,
       employeeId: e.employeeId || "",
+      workPeriod: e.workPeriod || "",
       note: e.note || "",
     });
     setExpFormOpen(true);
@@ -121,6 +123,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
         amount: Number(expForm.amount),
         category: expForm.category,
         employeeId: expForm.category === "SALARY" ? expForm.employeeId : null,
+        workPeriod: expForm.workPeriod || null,
         note: expForm.note || null,
       };
       const res = await fetch(editingExpense ? `/api/expenses/${editingExpense.id}` : "/api/expenses", {
@@ -306,6 +309,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
                           <p className="font-semibold text-stone-900 text-sm truncate">{title}</p>
                           <p className="text-xs text-stone-400">
                             {formatDate(e.date)}
+                            {e.workPeriod ? ` · Kerja: ${e.workPeriod}` : ""}
                             {e.note ? ` · ${e.note}` : ""}
                           </p>
                         </div>
@@ -444,6 +448,19 @@ export default function ExpensesClient({ initialExpenses, initialEmployees }: Pr
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+
+          {expForm.category === "SALARY" && (
+            <div>
+              <label className="label">Tanggal Kerja <span className="text-stone-300">(opsional)</span></label>
+              <input
+                type="text"
+                placeholder="Mis. 1-15 Agustus 2026"
+                value={expForm.workPeriod}
+                onChange={(e) => setExpForm((f) => ({ ...f, workPeriod: e.target.value }))}
+                className="input"
+              />
             </div>
           )}
 

@@ -152,6 +152,7 @@ export type Employee = {
 export type Expense = {
   id: string;
   date: Date | string;
+  workPeriod: string | null;
   amount: number;
   category: ExpenseCategory;
   employeeId: string | null;
