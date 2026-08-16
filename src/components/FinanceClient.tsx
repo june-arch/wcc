@@ -1,16 +1,21 @@
 "use client";
 // src/components/FinanceClient.tsx
 import { useMemo } from "react";
-import { TrendingUp, TrendingDown, Banknote, AlertCircle, CheckCircle2 } from "lucide-react";
-import { cn, formatDate, formatDateRange, getPaymentStatus } from "@/lib/utils";
+import { TrendingUp, TrendingDown, Banknote, AlertCircle, CheckCircle2, Wallet, PieChart, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { cn, formatDate } from "@/lib/utils";
 
-import type { BookingWithRelations } from "@/types";
+import type { BookingWithRelations, Expense } from "@/types";
 
 interface Props {
   bookings: BookingWithRelations[];
+  expenses: Expense[];
 }
 
-export default function FinanceClient({ bookings }: Props) {
+const monthKey = (d: Date | string) =>
+  new Date(d).toLocaleDateString("id-ID", { year: "numeric", month: "long" });
+
+export default function FinanceClient({ bookings, expenses }: Props) {
   const stats = useMemo(() => {
     // Calculate totals using new schema
     let totalPackage = 0;
@@ -38,10 +43,10 @@ export default function FinanceClient({ bookings }: Props) {
 
     const totalUnpaid = totalPackage - totalPaid;
 
-    // Month breakdown
+    // Month breakdown (pemasukan)
     const byMonth: Record<string, { package: number; paid: number; count: number }> = {};
     bookings.forEach((b) => {
-      const key = new Date(b.startDate).toLocaleDateString("id-ID", { year: "numeric", month: "long" });
+      const key = monthKey(b.startDate);
       if (!byMonth[key]) byMonth[key] = { package: 0, paid: 0, count: 0 };
 
       const packagePrice = b.pricePackage?.price || 0;
@@ -56,8 +61,21 @@ export default function FinanceClient({ bookings }: Props) {
       byMonth[key].count++;
     });
 
-    return { totalPackage, totalPaid, totalUnpaid, lunas, belumLunas, byMonth };
-  }, [bookings]);
+    // Expenses
+    const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+    const byExpenseMonth: Record<string, { total: number; salary: number; fuel: number; other: number; count: number }> = {};
+    expenses.forEach((e) => {
+      const key = monthKey(e.date);
+      if (!byExpenseMonth[key]) byExpenseMonth[key] = { total: 0, salary: 0, fuel: 0, other: 0, count: 0 };
+      byExpenseMonth[key].total += e.amount;
+      byExpenseMonth[key][e.category.toLowerCase() as "salary" | "fuel" | "other"] += e.amount;
+      byExpenseMonth[key].count++;
+    });
+
+    const netProfit = totalPaid - totalExpenses;
+
+    return { totalPackage, totalPaid, totalUnpaid, lunas, belumLunas, byMonth, totalExpenses, byExpenseMonth, netProfit };
+  }, [bookings, expenses]);
 
   const statCards = [
     {
@@ -91,17 +109,33 @@ export default function FinanceClient({ bookings }: Props) {
       border: "border-blue-200",
       sub: `${stats.belumLunas} belum lunas`,
     },
+    {
+      label: "Total Pengeluaran",
+      value: `Rp ${stats.totalExpenses.toLocaleString("id-ID")}`,
+      icon: TrendingDown,
+      color: "bg-red-100 text-red-500",
+      border: "border-red-200",
+      sub: `${expenses.length} catatan`,
+    },
+    {
+      label: "Laba Bersih",
+      value: `Rp ${stats.netProfit.toLocaleString("id-ID")}`,
+      icon: Wallet,
+      color: stats.netProfit >= 0 ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-500",
+      border: stats.netProfit >= 0 ? "border-emerald-200" : "border-red-200",
+      sub: stats.netProfit >= 0 ? "pemasukan dikurangi pengeluaran" : "pengeluaran melebihi pemasukan",
+    },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in pb-20">
       <div>
         <h1 className="text-2xl font-bold text-stone-900">Keuangan</h1>
-        <p className="text-stone-500 text-sm mt-0.5">Ringkasan pendapatan & pembayaran</p>
+        <p className="text-stone-500 text-sm mt-0.5">Ringkasan pendapatan, pengeluaran & pembayaran</p>
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
         {statCards.map((card) => (
           <div key={card.label} className={cn("card p-4 md:p-5 border", card.border)}>
             <div className="flex items-start justify-between">
@@ -125,7 +159,7 @@ export default function FinanceClient({ bookings }: Props) {
         {/* By month */}
         <div className="card">
           <div className="px-4 sm:px-5 py-4 border-b border-stone-100">
-            <h2 className="font-bold text-stone-900 text-sm">Per Bulan</h2>
+            <h2 className="font-bold text-stone-900 text-sm">Pemasukan Per Bulan</h2>
           </div>
           <div className="divide-y divide-stone-50">
             {Object.entries(stats.byMonth).map(([month, data]) => {
@@ -213,6 +247,53 @@ export default function FinanceClient({ bookings }: Props) {
             </table>
           </div>
         </div>
+      </div>
+
+      {/* Pengeluaran section */}
+      <div className="card overflow-hidden">
+        <div className="px-4 sm:px-5 py-4 border-b border-stone-100 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="font-bold text-stone-900 text-sm">Pengeluaran</h2>
+            <p className="text-xs text-stone-400 mt-0.5">Gaji karyawan, bensin mobil & lainnya</p>
+          </div>
+          <Link href="/dashboard/expenses" className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1 shrink-0">
+            Kelola <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {expenses.length === 0 ? (
+          <div className="px-5 py-8 text-center">
+            <PieChart size={24} className="mx-auto text-stone-300 mb-2" />
+            <p className="text-stone-500 text-sm font-medium">Belum ada pengeluaran tercatat</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-stone-50">
+            {Object.entries(stats.byExpenseMonth).map(([month, data]) => {
+              const parts: string[] = [];
+              if (data.salary > 0) parts.push(`Gaji ${data.salary.toLocaleString("id-ID")}`);
+              if (data.fuel > 0) parts.push(`Bensin ${data.fuel.toLocaleString("id-ID")}`);
+              if (data.other > 0) parts.push(`Lainnya ${data.other.toLocaleString("id-ID")}`);
+              return (
+                <div key={month} className="px-5 py-3.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div>
+                      <span className="text-sm font-semibold text-stone-800 capitalize">{month}</span>
+                      <span className="text-xs text-stone-400 ml-2">{data.count} catatan</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold text-red-500">Rp {data.total.toLocaleString("id-ID")}</p>
+                      <p className="text-xs text-stone-400">{parts.join(" · ")}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="px-5 py-3.5 bg-stone-50 flex items-center justify-between">
+              <span className="text-sm font-bold text-stone-700">TOTAL PENGELUARAN</span>
+              <span className="text-sm font-bold text-red-500">Rp {stats.totalExpenses.toLocaleString("id-ID")}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

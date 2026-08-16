@@ -133,3 +133,36 @@ export type AcrylicOrderWithRelations = {
   createdBy?: { name: string; email: string } | null;
   payments: AcrylicPayment[];
 };
+
+// ─── Expense & Employee types ─────────────────────────────────────────────────
+
+export type ExpenseCategory = "SALARY" | "FUEL" | "OTHER";
+
+export type Employee = {
+  id: string;
+  name: string;
+  position: string | null;
+  phone: string | null;
+  salary: number | null;
+  isActive: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
+export type Expense = {
+  id: string;
+  date: Date | string;
+  amount: number;
+  category: ExpenseCategory;
+  employeeId: string | null;
+  employee: Employee | null;
+  note: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
+export const EXPENSE_CATEGORY_LABEL: Record<ExpenseCategory, string> = {
+  SALARY: "Gaji Karyawan",
+  FUEL: "Bensin Mobil",
+  OTHER: "Lainnya",
+};

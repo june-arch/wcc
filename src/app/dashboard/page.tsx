@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  const [allBookings, monthBookings, allAcrylicOrders, monthAcrylicOrders] = await Promise.all([
+  const [allBookings, monthBookings, allAcrylicOrders, monthAcrylicOrders, expenses] = await Promise.all([
     prisma.booking.findMany({
       include: {
         payments: true,
@@ -37,6 +37,9 @@ export default async function DashboardPage() {
     }),
     prisma.acrylicOrder.findMany({
       where: { eventDate: { gte: startOfMonth, lte: endOfMonth } },
+    }),
+    prisma.expense.findMany({
+      where: { date: { gte: startOfMonth, lte: endOfMonth } },
     }),
   ]);
 
@@ -68,6 +71,25 @@ export default async function DashboardPage() {
   const unpaidRevenue = totalRevenue - paidRevenue;
   const wccCompletedCount = allBookings.filter((b) => b.status === "COMPLETED").length;
   const acrylicCompletedCount = allAcrylicOrders.filter((o) => o.status === "COMPLETED").length;
+
+  // Expenses bulan ini (untuk dashboard)
+  const expensesMonth = expenses.reduce((s, e) => s + e.amount, 0);
+  const paidThisMonth =
+    allBookings.reduce((s, b) => {
+      const inMonth = b.payments?.filter((p) => {
+        const d = new Date(p.paidAt);
+        return d >= startOfMonth && d <= endOfMonth;
+      }).reduce((x, p) => x + p.amount, 0) || 0;
+      return s + inMonth;
+    }, 0) +
+    allAcrylicOrders.reduce((s, o) => {
+      const inMonth = o.payments?.filter((p) => {
+        const d = new Date(p.paidAt);
+        return d >= startOfMonth && d <= endOfMonth;
+      }).reduce((x, p) => x + p.amount, 0) || 0;
+      return s + inMonth;
+    }, 0);
+  const netProfitMonth = paidThisMonth - expensesMonth;
 
   // Upcoming — combine both, sort by date
   const today = new Date();
@@ -112,6 +134,8 @@ export default async function DashboardPage() {
         pendingCount: allBookings.filter((b) => b.status === "PENDING").length,
         totalAcrylicOrders: allAcrylicOrders.length,
         monthAcrylicOrders: monthAcrylicOrders.length,
+        expensesMonth,
+        netProfitMonth,
       }}
       upcomingBookings={upcomingBookings}
       allBookings={allBookings}

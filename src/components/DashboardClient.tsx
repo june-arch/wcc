@@ -33,6 +33,8 @@ interface Stats {
   pendingCount: number;
   totalAcrylicOrders: number;
   monthAcrylicOrders: number;
+  expensesMonth: number;
+  netProfitMonth: number;
 }
 
 interface Props {
@@ -78,6 +80,20 @@ export default function DashboardClient({ stats, upcomingBookings, allBookings, 
               </p>
               <p className="text-sm text-emerald-600 mt-1">Lunas: Rp {(stats.totalRevenue - stats.unpaidRevenue).toLocaleString("id-ID")}</p>
               <p className="text-sm text-red-500">Piutang: Rp {stats.unpaidRevenue.toLocaleString("id-ID")}</p>
+              <div className="mt-2 pt-2 border-t border-emerald-100 flex flex-col gap-0.5">
+                <p className="text-sm text-red-500">
+                  Pengeluaran bln ini: Rp {stats.expensesMonth.toLocaleString("id-ID")}
+                </p>
+                <p className={cn("text-sm font-semibold", stats.netProfitMonth >= 0 ? "text-emerald-600" : "text-red-500")}>
+                  Laba bln ini: Rp {stats.netProfitMonth.toLocaleString("id-ID")}
+                </p>
+                <Link
+                  href="/dashboard/expenses"
+                  className="text-xs text-orange-600 hover:text-orange-700 font-medium mt-1 inline-flex items-center gap-1 w-fit"
+                >
+                  Kelola pengeluaran <ArrowRight size={12} />
+                </Link>
+              </div>
             </div>
             <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-600">
               <Banknote size={18} className="md:w-5 md:h-5" />

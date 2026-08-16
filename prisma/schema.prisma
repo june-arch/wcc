@@ -251,3 +251,39 @@ model AcrylicPayment {
   @@map("acrylic_payments")
 }
 
+// ─── Expenses & Employees (pengeluaran operasional) ──────────────────────────
+
+enum ExpenseCategory {
+  SALARY
+  FUEL
+  OTHER
+}
+
+model Employee {
+  id        String    @id @default(cuid())
+  name      String
+  position  String?
+  phone     String?
+  salary    Int? // gaji pokok (default isian form, rupiah)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expenses  Expense[]
+
+  @@map("employees")
+}
+
+model Expense {
+  id         String          @id @default(cuid())
+  date       DateTime // tanggal pengeluaran (bebas)
+  amount     Int // nominal rupiah
+  category   ExpenseCategory @default(OTHER)
+  employeeId String?
+  employee   Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  note       String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@map("expenses")
+}
+
