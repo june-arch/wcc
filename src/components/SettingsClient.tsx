@@ -2,7 +2,8 @@
 // src/components/SettingsClient.tsx
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Lock, Bell, Info, Camera, LogOut } from "lucide-react";
+import Link from "next/link";
+import { User, Lock, Bell, Info, Camera, LogOut, Database, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth-client";
 import toast from "react-hot-toast";
@@ -85,6 +86,27 @@ export default function SettingsClient({ user }: Props) {
         >
           {saving ? "Menyimpan..." : "Simpan Perubahan"}
         </button>
+      </div>
+
+      {/* Master Data */}
+      <div className="card p-4 sm:p-6 space-y-4">
+        <div className="flex items-center gap-3 pb-4 border-b border-stone-100">
+          <Database size={16} className="text-stone-400" />
+          <h2 className="font-semibold text-stone-800 text-sm">Master Data</h2>
+        </div>
+        <Link
+          href="/dashboard/price-list"
+          className="flex items-center gap-3 p-3 rounded-xl border border-stone-100 hover:border-stone-200 hover:bg-stone-50 transition-colors"
+        >
+          <div className="w-9 h-9 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
+            <Database size={16} className="text-orange-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-stone-900">Harga Paket & Layanan</p>
+            <p className="text-xs text-stone-400">Paket harga, add-on, dan jenis acara</p>
+          </div>
+          <ChevronRight size={16} className="text-stone-300 shrink-0" />
+        </Link>
       </div>
 
       {/* App info */}

@@ -8,7 +8,7 @@ import {
   CalendarDays,
   Square,
   Wallet,
-  Database,
+  ReceiptText,
   Settings,
 } from "lucide-react";
 import { useTransition } from "react";
@@ -19,7 +19,7 @@ const navItems = [
   { href: "/dashboard/bookings", label: "Booking", icon: CalendarDays },
   { href: "/dashboard/acrylic", label: "Acrylic", icon: Square },
   { href: "/dashboard/finance", label: "Keuangan", icon: Wallet },
-  { href: "/dashboard/price-list", label: "Master Data", icon: Database },
+  { href: "/dashboard/expenses", label: "Pengeluaran", icon: ReceiptText },
   { href: "/dashboard/settings", label: "Setting", icon: Settings },
 ];
 
