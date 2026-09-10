@@ -306,6 +306,7 @@ export default function BookingsClient({ initialBookings }: Props) {
           type="wcc"
           onClose={() => setSelectedDay(null)}
           onSelectBooking={(b) => { setSelectedBooking(b); setSelectedDay(null); }}
+          onEditBooking={(b) => { setSelectedDay(null); setEditingBooking(b); setShowEditModal(true); }}
         />
       )}
     </div>

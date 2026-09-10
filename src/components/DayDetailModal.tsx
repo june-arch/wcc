@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
-import { X, CalendarDays, MapPin, Square, Camera } from "lucide-react";
+import { X, CalendarDays, MapPin, Square, Camera, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HolidayInfo } from "@/lib/utils";
 
@@ -40,6 +40,7 @@ interface DayDetailModalProps {
   onClose: () => void;
   onSelectBooking?: (b: any) => void;
   onSelectOrder?: (o: any) => void;
+  onEditBooking?: (b: any) => void;
 }
 
 export default function DayDetailModal({
@@ -54,6 +55,7 @@ export default function DayDetailModal({
   onClose,
   onSelectBooking,
   onSelectOrder,
+  onEditBooking,
 }: DayDetailModalProps) {
   const allBookings = [...bookings, ...wccBookings];
   const allOrders = [...orders, ...acrylicOrders];
@@ -156,47 +158,62 @@ export default function DayDetailModal({
                   const sisa = Math.max(0, total - paid);
                   const isLunas = total > 0 && paid >= total;
                   return (
-                    <button
+                    <div
                       key={b.id}
-                      onClick={() => { onSelectBooking?.(b); onClose(); }}
-                      className="w-full flex items-start gap-3 px-5 py-3 hover:bg-orange-50 transition-colors text-left"
+                      className="w-full flex items-center gap-2 px-3 py-3 hover:bg-orange-50 transition-colors"
                     >
-                      <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
-                        <Camera size={14} className="text-orange-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-semibold text-stone-900 truncate">{b.clientName}</p>
+                      <button
+                        onClick={() => { onSelectBooking?.(b); onClose(); }}
+                        className="flex-1 flex items-start gap-3 text-left min-w-0"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
+                          <Camera size={14} className="text-orange-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-semibold text-stone-900 truncate">{b.clientName}</p>
+                            {total > 0 && (
+                              <span className={cn(
+                                "text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
+                                isLunas ? "bg-emerald-100 text-emerald-700" : paid > 0 ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-500"
+                              )}>
+                                {isLunas ? "Lunas" : paid > 0 ? "DP" : "Belum"}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {b.location && (
+                              <span className="text-xs text-stone-400 flex items-center gap-0.5 truncate max-w-[160px]">
+                                <MapPin size={10} />{b.location}
+                              </span>
+                            )}
+                            {b.bookingEventTypes && b.bookingEventTypes.length > 0 && (
+                              <span className="text-[10px] text-orange-500 font-medium truncate">
+                                {b.bookingEventTypes.map(be => be.eventType.label).join(", ")}
+                              </span>
+                            )}
+                          </div>
                           {total > 0 && (
-                            <span className={cn(
-                              "text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
-                              isLunas ? "bg-emerald-100 text-emerald-700" : paid > 0 ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-500"
-                            )}>
-                              {isLunas ? "Lunas" : paid > 0 ? "DP" : "Belum"}
-                            </span>
+                            <p className="text-[10px] text-stone-500 mt-1">
+                              <span className="font-semibold text-emerald-600">Bayar Rp {paid.toLocaleString("id-ID")}</span>
+                              {sisa > 0 && <span className="text-stone-400"> · Sisa Rp {sisa.toLocaleString("id-ID")}</span>}
+                            </p>
                           )}
                         </div>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {b.location && (
-                            <span className="text-xs text-stone-400 flex items-center gap-0.5 truncate max-w-[160px]">
-                              <MapPin size={10} />{b.location}
-                            </span>
-                          )}
-                          {b.bookingEventTypes && b.bookingEventTypes.length > 0 && (
-                            <span className="text-[10px] text-orange-500 font-medium truncate">
-                              {b.bookingEventTypes.map(be => be.eventType.label).join(", ")}
-                            </span>
-                          )}
-                        </div>
-                        {total > 0 && (
-                          <p className="text-[10px] text-stone-500 mt-1">
-                            <span className="font-semibold text-emerald-600">Bayar Rp {paid.toLocaleString("id-ID")}</span>
-                            {sisa > 0 && <span className="text-stone-400"> · Sisa Rp {sisa.toLocaleString("id-ID")}</span>}
-                          </p>
-                        )}
-                      </div>
-                      <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full shrink-0">WCC</span>
-                    </button>
+                        <span className="text-[10px] font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full shrink-0 self-center">WCC</span>
+                      </button>
+                      {onEditBooking && (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); onEditBooking(b); }}
+                          title="Edit booking"
+                          aria-label={`Edit booking ${b.clientName}`}
+                          className="w-8 h-8 min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg bg-white border border-stone-200 text-stone-400 hover:text-orange-600 hover:bg-orange-50 hover:border-orange-200 transition-colors shrink-0"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
+                    </div>
                   );
                 })}
 

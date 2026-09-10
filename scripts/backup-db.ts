@@ -13,6 +13,7 @@ async function main() {
     accounts: () => prisma.account.findMany(),
     verifications: () => prisma.verification.findMany(),
     bookings: () => prisma.booking.findMany(),
+    bookingDates: () => prisma.bookingDate.findMany(),
     payments: () => prisma.payment.findMany(),
     eventTypes: () => prisma.eventType.findMany(),
     pricePackages: () => prisma.pricePackage.findMany(),
@@ -23,6 +24,8 @@ async function main() {
     panelTypes: () => prisma.panelType.findMany(),
     acrylicOrders: () => prisma.acrylicOrder.findMany(),
     acrylicPayments: () => prisma.acrylicPayment.findMany(),
+    employees: () => prisma.employee.findMany(),
+    expenses: () => prisma.expense.findMany(),
   };
 
   const result: Record<string, unknown[]> = {};
