@@ -6,7 +6,7 @@ import {
   CalendarDays, CheckCircle2, Clock,
   ArrowRight, Camera, Banknote, Square
 } from "lucide-react";
-import { formatDate, getStatusColor, getStatusLabel, getDaysUntil, cn, getHolidayInfo, isWeekend, getDayColor } from "@/lib/utils";
+import { formatDate, getStatusColor, getStatusLabel, getDaysUntil, cn, getHolidayInfo, isWeekend, getDayColor, getBookingDateKeys } from "@/lib/utils";
 import { BookingWithRelations } from "@/types";
 import { AcrylicOrderWithRelations } from "@/types";
 import DayDetailModal from "./DayDetailModal";
@@ -380,19 +380,14 @@ function UnifiedCalendar({
   const dayLabels = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
 
   const getEventsForDay = (day: Date) => {
-    const dayMs = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+    const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
 
-    const wcc = allBookings.filter((b) => {
-      const start = new Date(b.startDate);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(b.endDate || b.startDate);
-      end.setHours(23, 59, 59, 999);
-      return dayMs >= start.getTime() && dayMs <= end.getTime();
-    });
+    const wcc = allBookings.filter((b) => getBookingDateKeys(b as unknown as Parameters<typeof getBookingDateKeys>[0]).includes(key));
 
     const acrylic = allAcrylicOrders.filter((o) => {
       const d = new Date(o.eventDate);
       d.setHours(0, 0, 0, 0);
+      const dayMs = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
       return d.getTime() === dayMs;
     });
 

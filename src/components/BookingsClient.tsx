@@ -6,7 +6,7 @@ import {
   ChevronLeft, ChevronRight, Pencil, Trash2, Eye,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { cn, formatDate, formatDateRange, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil, getHolidayInfo, isWeekend, getDayColor } from "@/lib/utils";
+import { cn, formatDate, formatBookingDates, getBookingDateKeys, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil, getHolidayInfo, isWeekend, getDayColor } from "@/lib/utils";
 import type { BookingWithRelations, ViewMode, FilterStatus } from "@/types";
 import BookingModal from "./BookingModal";
 import EditBookingModal from "./EditBookingModal";
@@ -91,15 +91,10 @@ export default function BookingsClient({ initialBookings }: Props) {
   }, [calendarDate]);
 
   const getBookingsForDay = useCallback(
-    (day: Date) =>
-      filtered.filter((b) => {
-        const s = new Date(b.startDate);
-        const e = b.endDate ? new Date(b.endDate) : s;
-        const dayMs = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
-        const sMs = new Date(s.getFullYear(), s.getMonth(), s.getDate()).getTime();
-        const eMs = new Date(e.getFullYear(), e.getMonth(), e.getDate()).getTime();
-        return dayMs >= sMs && dayMs <= eMs;
-      }),
+    (day: Date) => {
+      const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+      return filtered.filter((b) => getBookingDateKeys(b as unknown as Parameters<typeof getBookingDateKeys>[0]).includes(key));
+    },
     [filtered]
   );
 
@@ -372,23 +367,22 @@ function ListView({
                     : "bg-gradient-to-br from-stone-50 to-stone-100 border-stone-200 shadow-md hover:shadow-lg hover:from-stone-50 hover:to-stone-200"
                 )}>
                   {(() => {
-                    const startDate = new Date(b.startDate);
-                    const endDate = b.endDate ? new Date(b.endDate) : null;
-                    const isSameDate = endDate && startDate.toDateString() === endDate.toDateString();
-                    
+                    const keys = getBookingDateKeys(b as unknown as Parameters<typeof getBookingDateKeys>[0]);
+                    const first = keys[0] ? new Date(`${keys[0]}T12:00:00+07:00`) : new Date(b.startDate);
+                    const label = keys.length <= 1 ? `${first.getDate()}` : keys.length === 2 ? `${new Date(`${keys[0]}T12:00:00+07:00`).getDate()},${new Date(`${keys[1]}T12:00:00+07:00`).getDate()}` : `${first.getDate()}+${keys.length - 1}`;
                     return (
-                      <div className="flex flex-col items-center">
+                      <div className="flex flex-col items-center" title={formatBookingDates(b as unknown as Parameters<typeof formatBookingDates>[0])}>
                         <span className={cn(
                           "text-xs font-bold uppercase tracking-wider leading-none transition-colors duration-200 mb-1",
-                          isToday(startDate) ? "text-brand-100" : "text-stone-600"
+                          isToday(first) ? "text-brand-100" : "text-stone-600"
                         )}>
-                          {format(startDate, "MMM", { locale: idLocale })}
+                          {format(first, "MMM", { locale: idLocale })}
                         </span>
                         <span className={cn(
                           "text-base font-bold leading-none tracking-tight transition-colors duration-200",
-                          isToday(startDate) ? "text-white" : "text-stone-900"
+                          isToday(first) ? "text-white" : "text-stone-900"
                         )}>
-                          {isSameDate ? startDate.getDate() : `${startDate.getDate()}-${endDate?.getDate()}`}
+                          {label}
                         </span>
                       </div>
                     );

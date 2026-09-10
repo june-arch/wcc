@@ -2,9 +2,10 @@
 // src/components/EditBookingModal.tsx
 import { useState, useEffect } from "react";
 import { Loader2, Package, Check, Sparkles, Minus, Wallet, Plus, Pencil, Trash2, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatDateList, getBookingDateKeys, expandDateRangeToKeys } from "@/lib/utils";
 import ResponsiveModal from "./ui/ResponsiveModal";
 import { FormattedNumberInput } from "./ui/FormattedNumberInput";
+import MultiDateCalendar from "./MultiDateCalendar";
 import type { BookingWithRelations, PricePackage, AddOn } from "@/types";
 import toast from "react-hot-toast";
 
@@ -25,11 +26,13 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function EditBookingModal({ booking, onClose, onSuccess }: Props) {
-  const formatDateForInput = (date: string | Date | null | undefined) => {
-    if (!date) return "";
-    const d = typeof date === "string" ? date : date.toISOString();
-    return d.split("T")[0];
-  };
+  const initialDateKeys = (() => {
+    try {
+      const k = getBookingDateKeys(booking as unknown as { bookingDates?: { date: Date | string }[] | null; startDate: Date | string; endDate?: Date | string | null });
+      if (k.length > 0) return k;
+    } catch {}
+    return expandDateRangeToKeys(booking.startDate, booking.endDate);
+  })();
 
   // Calculate base package price
   const transportCost = booking.transport || 0;
@@ -54,8 +57,7 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
     clientName: booking.clientName,
     hashtag: booking.hashtag ?? "",
     location: booking.location ?? "",
-    startDate: formatDateForInput(booking.startDate),
-    endDate: formatDateForInput(booking.endDate),
+    dates: initialDateKeys,
     eventTypeIds: initialEventTypeIds,
     package: basePackagePrice,
     transport: booking.transport ?? 0,
@@ -309,16 +311,20 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Debug log
-    console.log("Submitting form:", { clientName: form.clientName, eventTypeIds: form.eventTypeIds });
-    
+    console.log("Submitting form:", { clientName: form.clientName, eventTypeIds: form.eventTypeIds, dates: form.dates });
+
     if (!form.clientName?.trim()) {
       toast.error("Nama klien wajib diisi");
       return;
     }
     if (form.eventTypeIds.length === 0) {
       toast.error("Jenis acara wajib dipilih minimal satu");
+      return;
+    }
+    if (form.dates.length === 0) {
+      toast.error("Pilih minimal 1 tanggal");
       return;
     }
     setLoading(true);
@@ -330,8 +336,7 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
           clientName: form.clientName,
           hashtag: form.hashtag,
           location: form.location,
-          startDate: form.startDate,
-          endDate: form.endDate,
+          dates: form.dates,
           eventTypeIds: form.eventTypeIds,
           isConfirmed: form.isConfirmed,
           notes: form.notes,
@@ -412,28 +417,26 @@ export default function EditBookingModal({ booking, onClose, onSuccess }: Props)
           />
         </div>
 
-        {/* Tanggal */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-              Tanggal Mulai <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="date"
-              className="input-base w-full"
-              value={form.startDate}
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Tanggal Selesai</label>
-            <input
-              type="date"
-              className="input-base w-full"
-              value={form.endDate}
-              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-            />
-          </div>
+        {/* Tanggal — Multi */}
+        <div>
+          <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+            Tanggal <span className="text-red-400">*</span> <span className="text-xs font-normal text-stone-400">— pilih bebas, boleh lompat</span>
+          </label>
+          <MultiDateCalendar value={form.dates} onChange={(dates) => setForm((f) => ({ ...f, dates }))} />
+          {form.dates.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {form.dates.map((d) => (
+                <span key={d} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
+                  {formatDateList([d])}
+                  <button type="button" onClick={() => setForm((f) => ({ ...f, dates: f.dates.filter((x) => x !== d) }))} className="hover:text-orange-900">
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+              <button type="button" onClick={() => setForm((f) => ({ ...f, dates: [] }))} className="text-xs text-stone-400 hover:text-red-500 ml-1">Hapus semua</button>
+            </div>
+          )}
+          {form.dates.length === 0 && <p className="text-xs text-red-400 mt-1">Pilih minimal 1 tanggal.</p>}
         </div>
 
         {/* Jenis acara */}

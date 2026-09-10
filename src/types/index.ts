@@ -18,6 +18,7 @@ export type BookingWithRelations = {
   payments: Payment[];
   bookingAddOns?: BookingAddOn[];
   bookingEventTypes?: BookingEventType[];
+  bookingDates?: { id?: string; date: Date | string }[];
   createdBy?: { name: string; email: string } | null;
 };
 

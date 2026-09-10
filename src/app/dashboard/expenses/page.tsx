@@ -1,7 +1,7 @@
 // src/app/dashboard/expenses/page.tsx
 import { prisma } from "@/lib/prisma";
 import ExpensesClient from "@/components/ExpensesClient";
-import { startOfTodayWIB } from "@/lib/utils";
+import { startOfTodayWIB, getBookingDateKeys, formatBookingDates } from "@/lib/utils";
 import type { AvailableOrder } from "@/types";
 
 export const revalidate = 0;
@@ -10,14 +10,16 @@ const shortDate = (d: Date) =>
   d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
 // Tanggal event + tanggal selesai kalau beda hari, dipisah koma (pola kwitansi)
-const eventDateLabel = (start: Date, end: Date | null) => {
-  const s = shortDate(start);
-  if (!end) return s;
-  const e = new Date(end);
+// Untuk multi-tanggal pakai formatBookingDates (koma).
+const eventDateLabelFromBooking = (b: { bookingDates?: { date: Date | string }[] | null; startDate: Date; endDate: Date | null }) => {
+  if (b.bookingDates && b.bookingDates.length > 0) return formatBookingDates(b as unknown as Parameters<typeof formatBookingDates>[0]);
+  const s = shortDate(b.startDate);
+  if (!b.endDate) return s;
+  const e = new Date(b.endDate);
   const sameDay =
-    e.getFullYear() === start.getFullYear() &&
-    e.getMonth() === start.getMonth() &&
-    e.getDate() === start.getDate();
+    e.getFullYear() === b.startDate.getFullYear() &&
+    e.getMonth() === b.startDate.getMonth() &&
+    e.getDate() === b.startDate.getDate();
   return sameDay ? s : `${s}, ${shortDate(e)}`;
 };
 
@@ -35,7 +37,7 @@ export default async function ExpensesPage() {
     }),
     prisma.booking.findMany({
       where: { startDate: { lt: today } },
-      include: { pricePackage: true },
+      include: { pricePackage: true, bookingDates: { orderBy: { date: "asc" } } },
       orderBy: { startDate: "desc" },
     }),
     prisma.acrylicOrder.findMany({
@@ -48,7 +50,7 @@ export default async function ExpensesPage() {
   const availableOrders: AvailableOrder[] = [
     ...pastBookings.map((b) => ({
       id: b.id,
-      label: `${b.clientName} · ${eventDateLabel(b.startDate, b.endDate)} · WCC`,
+      label: `${b.clientName} · ${eventDateLabelFromBooking(b)} · WCC`,
       type: "wcc" as const,
       date: b.startDate.getTime(),
     })),

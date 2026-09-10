@@ -1,11 +1,12 @@
 "use client";
 // src/components/BookingModal.tsx
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Package, Check, Plus, Minus, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Loader2, Package, Check, Plus, Minus, Sparkles, X as XIcon } from "lucide-react";
+import { cn, formatDateList } from "@/lib/utils";
 import ResponsiveModal from "./ui/ResponsiveModal";
 import ReceiptModal from "./ui/ReceiptModal";
 import { FormattedNumberInput } from "./ui/FormattedNumberInput";
+import MultiDateCalendar from "./MultiDateCalendar";
 import type { BookingWithRelations, PricePackage, AddOn, Payment } from "@/types";
 import toast from "react-hot-toast";
 
@@ -42,8 +43,7 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
     initialPayment: "",
     location: "",
     eventType: [] as string[],
-    startDate: "",
-    endDate: "",
+    dates: [] as string[],
     notes: "",
     transport: "",
     discount: "",
@@ -104,7 +104,7 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
     e.preventDefault();
     if (!form.clientName.trim()) { toast.error("Nama klien wajib diisi"); return; }
     if (!form.package) { toast.error("Harga paket wajib diisi"); return; }
-    if (!form.startDate) { toast.error("Tanggal mulai wajib diisi"); return; }
+    if (form.dates.length === 0) { toast.error("Pilih minimal 1 tanggal"); return; }
     if (form.eventType.length === 0) { toast.error("Pilih minimal 1 jenis acara"); return; }
 
     setLoading(true);
@@ -118,9 +118,8 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
           transport: parseInt(form.transport) || 0,
           discount: parseInt(form.discount) || 0,
           location: form.location.trim() || null,
-          eventTypeIds: form.eventType, 
-          startDate: form.startDate,
-          endDate: form.endDate || null,
+          eventTypeIds: form.eventType,
+          dates: form.dates,
           notes: form.notes.trim() || null,
           status: form.status,
           isConfirmed: form.isConfirmed,
@@ -202,29 +201,26 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
           </div>
         </div>
 
-        {/* Tanggal */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">
-              Tanggal Mulai <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="date"
-              className="input-base w-full"
-              value={form.startDate}
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-stone-700 mb-1.5">Tanggal Selesai</label>
-            <input
-              type="date"
-              className="input-base w-full"
-              value={form.endDate}
-              min={form.startDate}
-              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-            />
-          </div>
+        {/* Tanggal — Multi */}
+        <div>
+          <label className="block text-sm font-semibold text-stone-700 mb-1.5">
+            Tanggal <span className="text-red-400">*</span> <span className="text-xs font-normal text-stone-400">— pilih bebas, boleh lompat</span>
+          </label>
+          <MultiDateCalendar value={form.dates} onChange={(dates) => setForm((f) => ({ ...f, dates }))} />
+          {form.dates.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {form.dates.map((d) => (
+                <span key={d} className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-medium">
+                  {formatDateList([d])}
+                  <button type="button" onClick={() => setForm((f) => ({ ...f, dates: f.dates.filter((x) => x !== d) }))} className="hover:text-orange-900">
+                    <XIcon size={12} />
+                  </button>
+                </span>
+              ))}
+              <button type="button" onClick={() => setForm((f) => ({ ...f, dates: [] }))} className="text-xs text-stone-400 hover:text-red-500 ml-1">Hapus semua</button>
+            </div>
+          )}
+          {form.dates.length === 0 && <p className="text-xs text-red-400 mt-1">Pilih minimal 1 tanggal.</p>}
         </div>
 
         {/* Lokasi */}
@@ -559,8 +555,9 @@ export default function BookingModal({ onClose, onSuccess }: Props) {
       clientName={form.clientName.trim()}
       amount={receipt?.amount ?? 0}
       purpose={`DP ${selectedPackage?.name ?? "Booking WCC"}${form.hashtag ? ` — ${form.hashtag}` : ""}`}
-      eventDate={form.startDate || null}
-      eventDateEnd={form.endDate || null}
+      eventDate={form.dates[0] ? new Date(`${form.dates[0]}T12:00:00+07:00`).toISOString() : null}
+      eventDateEnd={form.dates.length > 1 ? new Date(`${form.dates[form.dates.length - 1]}T12:00:00+07:00`).toISOString() : null}
+      eventDates={form.dates}
       totalAmount={totalPrice}
       totalPaid={bookingDraftRef.current?.payments?.reduce((s, p) => s + p.amount, 0) ?? receipt?.amount ?? 0}
       paidAt={receipt?.paidAt ?? new Date()}

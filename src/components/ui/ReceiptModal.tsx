@@ -19,6 +19,7 @@ interface ReceiptModalProps {
   purpose: string; // misal: "DP Paket Akad & Resepsi (Hari Sama)"
   eventDate?: string | null; // tanggal mulai acara
   eventDateEnd?: string | null; // tanggal akhir acara (untuk acara 2 hari)
+  eventDates?: string[] | null; // multi-tanggal YYYY-MM-DD (prioritas tampil koma)
   totalAmount?: number; // total harga booking
   totalPaid?: number; // total sudah dibayar (untuk hitung sisa)
   paidAt: Date | string;
@@ -35,6 +36,7 @@ export default function ReceiptModal({
   purpose,
   eventDate,
   eventDateEnd,
+  eventDates,
   totalAmount,
   totalPaid,
   paidAt,
@@ -282,7 +284,12 @@ export default function ReceiptModal({
                   <span className="text-stone-400 w-32 shrink-0">Untuk</span>
                   <span className="font-semibold">{purpose}</span>
                 </p>
-                {eventDate && (
+                {(eventDates && eventDates.length > 0 ? (
+                  <p className="flex gap-2">
+                    <span className="text-stone-400 w-32 shrink-0">Tanggal acara</span>
+                    <span className="font-semibold">{eventDates.map((d) => format(new Date(`${d}T12:00:00+07:00`), "d MMMM yyyy", { locale: idLocale })).join(", ")}</span>
+                  </p>
+                ) : eventDate ? (
                   <p className="flex gap-2">
                     <span className="text-stone-400 w-32 shrink-0">Tanggal acara</span>
                     <span className="font-semibold">
@@ -292,7 +299,7 @@ export default function ReceiptModal({
                       )}
                     </span>
                   </p>
-                )}
+                ) : null)}
                 {/* Sisa pembayaran — hanya muncul kalau masih DP */}
                 {sisa > 0 && (
                   <p className="flex gap-2">

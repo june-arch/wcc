@@ -94,8 +94,20 @@ model Booking {
   payments      Payment[]
   bookingAddOns BookingAddOn[]
   bookingEventTypes BookingEventType[]
+  bookingDates  BookingDate[]
 
   @@map("bookings")
+}
+
+model BookingDate {
+  id        String   @id @default(cuid())
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  date      DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([bookingId, date])
+  @@map("booking_dates")
 }
 
 model EventType {

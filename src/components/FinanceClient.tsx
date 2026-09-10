@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown, Banknote, AlertCircle, CheckCircle2, Wallet, PieChart, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { cn, formatDate } from "@/lib/utils";
+import { cn, formatBookingDates } from "@/lib/utils";
 
 import type { BookingWithRelations, Expense } from "@/types";
 
@@ -217,7 +217,7 @@ export default function FinanceClient({ bookings, expenses }: Props) {
                     <tr key={b.id} className="table-row">
                       <td className="px-4 py-3">
                         <p className="font-medium text-stone-900 truncate max-w-32">{b.clientName}</p>
-                        <p className="text-xs text-stone-400">{formatDate(b.startDate)}</p>
+                        <p className="text-xs text-stone-400">{formatBookingDates(b as unknown as Parameters<typeof formatBookingDates>[0])}</p>
                       </td>
                       <td className="px-4 py-3 text-right text-stone-700 font-medium">
                         {totalPrice.toLocaleString("id-ID")}

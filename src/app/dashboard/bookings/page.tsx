@@ -11,6 +11,7 @@ export default async function BookingsPage() {
       pricePackage: true,
       bookingAddOns: { include: { addOn: true } },
       bookingEventTypes: { include: { eventType: true } },
+      bookingDates: { orderBy: { date: "asc" } },
       createdBy: { select: { name: true, email: true } },
     },
     orderBy: { startDate: "asc" },

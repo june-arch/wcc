@@ -199,3 +199,95 @@ export function formatDateRange(startDate: Date | string | null | undefined, end
   if (start.toDateString() === end.toDateString()) return format(start, "dd MMM yyyy", { locale: idLocale });
   return `${format(start, "dd MMM", { locale: idLocale })} s.d ${format(end, "dd MMM yyyy", { locale: idLocale })}`;
 }
+
+// ─── Multi-date helpers ─────────────────────────────────────────────────────
+
+/** YYYY-MM-DD dari Date (lokal WIB-friendly: pakai getFullYear/Month/Date) */
+export function toDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** Parse YYYY-MM-DD → Date tengah hari WIB (hindari shift UTC). */
+export function fromDateKey(key: string): Date {
+  return new Date(`${key}T12:00:00+07:00`);
+}
+
+export function normalizeWIBDate(d: Date): Date {
+  return new Date(`${toDateKey(d)}T12:00:00+07:00`);
+}
+
+export function expandDateRangeToKeys(start: Date | string, end: Date | string | null | undefined): string[] {
+  const s = typeof start === "string" ? new Date(start) : start;
+  const eRaw = end ? (typeof end === "string" ? new Date(end) : end) : s;
+  const sKey = toDateKey(s);
+  const eKey = toDateKey(eRaw);
+  if (sKey === eKey) return [sKey];
+  const out: string[] = [];
+  let cur = new Date(`${sKey}T12:00:00+07:00`);
+  const endD = new Date(`${eKey}T12:00:00+07:00`);
+  // safety cap 366 hari
+  for (let i = 0; i < 366 && cur.getTime() <= endD.getTime(); i++) {
+    out.push(toDateKey(cur));
+    cur = new Date(cur.getTime() + 24 * 60 * 60 * 1000);
+  }
+  return out;
+}
+
+/** Ambil daftar YYYY-MM-DD dari booking (bookingDates prioritas, fallback ke range). */
+export function getBookingDateKeys(b: {
+  bookingDates?: { date: Date | string }[] | null;
+  startDate: Date | string;
+  endDate?: Date | string | null;
+}): string[] {
+  if (b.bookingDates && b.bookingDates.length > 0) {
+    const keys = b.bookingDates.map((bd) => {
+      const d = typeof bd.date === "string" ? new Date(bd.date) : bd.date;
+      return toDateKey(d);
+    });
+    return [...new Set(keys)].sort();
+  }
+  return expandDateRangeToKeys(b.startDate, b.endDate ?? null);
+}
+
+/** Set YYYY-MM-DD milik booking untuk cek kalender (fallback range). */
+export function bookingHasDate(
+  b: { bookingDates?: { date: Date | string }[] | null; startDate: Date | string; endDate?: Date | string | null },
+  day: Date
+): boolean {
+  const key = toDateKey(day);
+  return getBookingDateKeys(b).includes(key);
+}
+
+/** Format daftar tanggal koma: "12 Mar 2026, 15 Mar 2026" — KOREKSI user: koma, bukan dash. */
+export function formatDateList(dates: (string | Date)[]): string {
+  if (!dates || dates.length === 0) return "-";
+  const parsed = dates
+    .map((d) => {
+      if (typeof d === "string") {
+        // YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return fromDateKey(d);
+        const p = parseISO(d);
+        return isValid(p) ? p : null;
+      }
+      return d;
+    })
+    .filter((d): d is Date => !!d && isValid(d));
+  if (parsed.length === 0) return "-";
+  parsed.sort((a, b) => a.getTime() - b.getTime());
+  return parsed.map((d) => format(d, "d MMM yyyy", { locale: idLocale })).join(", ");
+}
+
+/** Overload: dari booking langsung ke label tanggal */
+export function formatBookingDates(b: {
+  bookingDates?: { date: Date | string }[] | null;
+  startDate: Date | string;
+  endDate?: Date | string | null;
+}): string {
+  const keys = getBookingDateKeys(b);
+  if (keys.length === 0) return "-";
+  if (keys.length === 1) return formatDate(fromDateKey(keys[0]));
+  return formatDateList(keys);
+}

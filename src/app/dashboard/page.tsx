@@ -22,6 +22,7 @@ export default async function DashboardPage() {
         pricePackage: true,
         bookingAddOns: { include: { addOn: true } },
         bookingEventTypes: { include: { eventType: true } },
+        bookingDates: { orderBy: { date: "asc" } },
       },
       orderBy: { startDate: "asc" },
     }),

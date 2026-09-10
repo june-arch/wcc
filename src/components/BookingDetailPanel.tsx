@@ -5,7 +5,7 @@ import {
   MapPin, Calendar, Tag, CreditCard,
   Plus, Loader2, ArrowLeft, Pencil,
 } from "lucide-react";
-import { cn, formatDate, formatDateRange, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil } from "@/lib/utils";
+import { cn, formatDate, formatBookingDates, getStatusColor, getStatusLabel, getPaymentStatus, getDaysUntil } from "@/lib/utils";
 import { FormattedNumberInput } from "./ui/FormattedNumberInput";
 import ReceiptModal from "./ui/ReceiptModal";
 import type { BookingWithRelations, Payment } from "@/types";
@@ -189,7 +189,7 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
           <div className="p-4 space-y-4">
             <InfoRow icon={Calendar} label="Tanggal">
               <span className="text-sm font-medium text-stone-800">
-                {formatDateRange(booking.startDate, booking.endDate)}
+                {formatBookingDates(booking as unknown as Parameters<typeof formatBookingDates>[0])}
               </span>
             </InfoRow>
 
@@ -377,20 +377,34 @@ export default function BookingDetailPanel({ booking, onClose, onPatch }: Props)
     </div>
 
     {/* Kwitansi — cetak ulang dari detail booking */}
-    <ReceiptModal
-      open={!!receipt}
-      onClose={() => setReceipt(null)}
-      receiptNumber={receipt?.receiptNumber ?? ""}
-      clientName={booking.clientName}
-      amount={receipt?.amount ?? 0}
-      purpose={receipt?.note || `Pembayaran ${booking.pricePackage?.name ?? "Booking WCC"}`}
-      eventDate={booking.startDate instanceof Date ? booking.startDate.toISOString() : (booking.startDate as string) || null}
-      eventDateEnd={booking.endDate instanceof Date ? booking.endDate.toISOString() : (booking.endDate as string) || null}
-      totalAmount={totalPrice}
-      totalPaid={totalPaid}
-      paidAt={receipt?.paidAt ?? new Date()}
-      receiver="Riska Yulanda Saputri"
-    />
+    {(() => {
+      const keys = (booking as unknown as { bookingDates?: { date: Date | string }[] | null; startDate: Date | string; endDate?: Date | string | null }).bookingDates?.length
+        ? (booking.bookingDates as { date: Date | string }[]).map((bd) => {
+            const d = typeof bd.date === "string" ? new Date(bd.date) : bd.date;
+            const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, "0"); const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+          }).sort()
+        : [];
+      const evStart = keys[0] ? new Date(`${keys[0]}T12:00:00+07:00`).toISOString() : (booking.startDate instanceof Date ? booking.startDate.toISOString() : (booking.startDate as string) || null);
+      const evEnd = keys.length > 1 ? new Date(`${keys[keys.length - 1]}T12:00:00+07:00`).toISOString() : (booking.endDate instanceof Date ? booking.endDate.toISOString() : (booking.endDate as string) || null);
+      return (
+        <ReceiptModal
+          open={!!receipt}
+          onClose={() => setReceipt(null)}
+          receiptNumber={receipt?.receiptNumber ?? ""}
+          clientName={booking.clientName}
+          amount={receipt?.amount ?? 0}
+          purpose={receipt?.note || `Pembayaran ${booking.pricePackage?.name ?? "Booking WCC"}`}
+          eventDate={evStart}
+          eventDateEnd={evEnd}
+          eventDates={keys.length ? keys : undefined}
+          totalAmount={totalPrice}
+          totalPaid={totalPaid}
+          paidAt={receipt?.paidAt ?? new Date()}
+          receiver="Riska Yulanda Saputri"
+        />
+      );
+    })()}
     </>
   );
 }

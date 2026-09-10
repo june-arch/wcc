@@ -12,6 +12,7 @@ export default async function FinancePage() {
         pricePackage: true,
         bookingAddOns: { include: { addOn: true } },
         bookingEventTypes: { include: { eventType: true } },
+        bookingDates: { orderBy: { date: "asc" } },
       },
       orderBy: { startDate: "asc" },
     }),
