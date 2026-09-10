@@ -286,16 +286,17 @@ model Employee {
 }
 
 model Expense {
-  id         String          @id @default(cuid())
-  date       DateTime // tanggal payout/pengeluaran (bebas)
-  workOrders String[] // daftar orderan yang dikerjakan (label snapshot: "Klien · Tanggal · WCC/Acrylic"), multi-select dari orderan lampau
-  amount     Int // nominal rupiah
-  category   ExpenseCategory @default(OTHER)
-  employeeId String?
-  employee   Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
-  note       String?
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  date          DateTime // tanggal payout/pengeluaran (bebas)
+  workOrders    String[] // daftar orderan yang dikerjakan (label snapshot: "Klien · Tanggal · WCC/Acrylic"), multi-select dari orderan lampau
+  amount        Int // nominal rupiah
+  category      ExpenseCategory @default(OTHER)
+  employeeId    String?
+  employee      Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  note          String?
+  receiptNumber String?         @unique
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@map("expenses")
 }

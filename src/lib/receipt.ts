@@ -15,6 +15,20 @@ export async function generateReceiptNumber(): Promise<string> {
   return `${prefix}${String(next).padStart(3, "0")}`;
 }
 
+/** Format: KG-YYMM-NNN, increment per bulan — seri SENDIRI untuk gaji (tabel expenses). Contoh: KG-2608-001 */
+export async function generateSalaryReceiptNumber(date?: Date | string): Promise<string> {
+  const d = date ? new Date(date) : new Date();
+  const yymm = `${String(d.getFullYear()).slice(2)}${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const prefix = `KG-${yymm}-`;
+  const last = await prisma.expense.findFirst({
+    where: { receiptNumber: { startsWith: prefix } },
+    orderBy: { receiptNumber: "desc" },
+    select: { receiptNumber: true },
+  });
+  const next = last ? parseInt(last.receiptNumber!.slice(-3), 10) + 1 : 1;
+  return `${prefix}${String(next).padStart(3, "0")}`;
+}
+
 const SATUAN = [
   "", "satu", "dua", "tiga", "empat", "lima", "enam",
   "tujuh", "delapan", "sembilan", "sepuluh", "sebelas",

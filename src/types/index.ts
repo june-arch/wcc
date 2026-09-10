@@ -159,6 +159,7 @@ export type Expense = {
   employeeId: string | null;
   employee: Employee | null;
   note: string | null;
+  receiptNumber?: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 };

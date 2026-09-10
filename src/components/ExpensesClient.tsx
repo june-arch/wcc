@@ -2,13 +2,14 @@
 // src/components/ExpensesClient.tsx
 import { useMemo, useState } from "react";
 import {
-  Plus, User as UserIcon, Car, Wallet, Pencil, Trash2, Users, Briefcase, Phone, Banknote, ChevronDown, CheckCircle2, Search,
+  Plus, User as UserIcon, Car, Wallet, Pencil, Trash2, Users, Briefcase, Phone, Banknote, ChevronDown, CheckCircle2, Search, Receipt,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn, formatDate } from "@/lib/utils";
 import { EXPENSE_CATEGORY_LABEL, type Expense, type Employee, type ExpenseCategory, type AvailableOrder } from "@/types";
 import ResponsiveModal from "./ui/ResponsiveModal";
 import ResponsiveConfirm from "./ui/ResponsiveConfirm";
+import ReceiptModal from "./ui/ReceiptModal";
 
 interface Props {
   initialExpenses: Expense[];
@@ -72,6 +73,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
 
   const [confirm, setConfirm] = useState<{ type: "expense" | "employee"; id: string; label: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [receiptExpense, setReceiptExpense] = useState<Expense | null>(null);
 
   const activeEmployees = employees.filter((e) => e.isActive);
 
@@ -166,6 +168,10 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
         toast.success("Pengeluaran dicatat");
       }
       setExpFormOpen(false);
+      // Otomatis tampilkan kwitansi untuk SALARY yang sudah bernomor (pola BookingDetailPanel tab Bayar)
+      if (data.category === "SALARY" && data.receiptNumber) {
+        setReceiptExpense(data);
+      }
     } catch (e: any) {
       toast.error(e.message || "Gagal menyimpan");
     } finally {
@@ -342,6 +348,14 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
                           <p className="font-bold text-stone-900 text-sm">Rp {e.amount.toLocaleString("id-ID")}</p>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
+                          {e.category === "SALARY" && e.receiptNumber && (
+                            <button
+                              onClick={() => setReceiptExpense(e)}
+                              className="flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1.5 rounded-full transition-colors"
+                            >
+                              <Receipt size={12} /> Kwitansi
+                            </button>
+                          )}
                           <button
                             onClick={() => openEditExpense(e)}
                             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-stone-100 text-stone-400 hover:text-stone-600"
@@ -686,6 +700,26 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
             : ""
         }
       />
+
+      {/* ─── Kwitansi Gaji (reuse ReceiptModal, portal+z-index, format sama KW) ── */}
+      {receiptExpense && (() => {
+        const empName = receiptExpense.employee?.name || employees.find((x) => x.id === receiptExpense.employeeId)?.name || "Karyawan";
+        const empPos = receiptExpense.employee?.position || employees.find((x) => x.id === receiptExpense.employeeId)?.position || null;
+        const purpose = `Gaji karyawan ${empName}` + (empPos ? ` (${empPos})` : "");
+        return (
+          <ReceiptModal
+            open={!!receiptExpense}
+            onClose={() => setReceiptExpense(null)}
+            receiptNumber={receiptExpense.receiptNumber || ""}
+            clientName="WCC Oranye Capture"
+            payer={empName}
+            receiver={empName}
+            amount={receiptExpense.amount}
+            purpose={purpose}
+            paidAt={receiptExpense.date}
+          />
+        );
+      })()}
     </div>
   );
 }

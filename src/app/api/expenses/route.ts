@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { generateSalaryReceiptNumber } from "@/lib/receipt";
 
 // GET /api/expenses — list semua pengeluaran (opsional filter ?category= & ?month=YYYY-MM)
 export async function GET(req: NextRequest) {
@@ -46,6 +47,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Pilih karyawan untuk gaji" }, { status: 400 });
   }
 
+  // Generate KG-YYMM-NNN hanya untuk SALARY yang punya employeeId
+  let receiptNumber: string | null = null;
+  if (cat === "SALARY" && employeeId) {
+    receiptNumber = await generateSalaryReceiptNumber();
+  }
+
   const expense = await prisma.expense.create({
     data: {
       date: new Date(date),
@@ -54,6 +61,7 @@ export async function POST(req: NextRequest) {
       category: cat,
       employeeId: cat === "SALARY" ? employeeId : null,
       note: note?.trim() || null,
+      ...(receiptNumber ? { receiptNumber } : {}),
     },
     include: { employee: true },
   });
