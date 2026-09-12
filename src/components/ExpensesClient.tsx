@@ -717,6 +717,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
             amount={receiptExpense.amount}
             purpose={purpose}
             paidAt={receiptExpense.date}
+            workOrders={receiptExpense.workOrders || []}
           />
         );
       })()}

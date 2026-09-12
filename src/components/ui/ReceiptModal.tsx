@@ -25,6 +25,7 @@ interface ReceiptModalProps {
   paidAt: Date | string;
   payer?: string; // nama yang bayar (default clientName)
   receiver?: string; // nama penerima (dari createdBy / "WCC Oranye Capture")
+  workOrders?: string[]; // daftar orderan gaji (label snapshot "Klien · tgl · WCC/Acrylic")
 }
 
 export default function ReceiptModal({
@@ -42,6 +43,7 @@ export default function ReceiptModal({
   paidAt,
   payer = clientName,
   receiver,
+  workOrders,
 }: ReceiptModalProps) {
   // sisa pembayaran (kalau masih DP)
   const sisa =
@@ -284,6 +286,18 @@ export default function ReceiptModal({
                   <span className="text-stone-400 w-32 shrink-0">Untuk</span>
                   <span className="font-semibold">{purpose}</span>
                 </p>
+                {workOrders && workOrders.length > 0 && (
+                  <div className="flex gap-2">
+                    <span className="text-stone-400 w-32 shrink-0">Orderan</span>
+                    <ol className="flex-1 text-xs font-medium leading-relaxed list-decimal list-inside space-y-0.5 break-words">
+                      {workOrders.map((label, i) => (
+                        <li key={i} className="marker:text-stone-400">
+                          {label}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
                 {(eventDates && eventDates.length > 0 ? (
                   <p className="flex gap-2">
                     <span className="text-stone-400 w-32 shrink-0">Tanggal acara</span>
