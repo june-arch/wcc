@@ -2,7 +2,7 @@
 // src/components/ExpensesClient.tsx
 import { useMemo, useState } from "react";
 import {
-  Plus, User as UserIcon, Car, Wallet, Pencil, Trash2, Users, Briefcase, Phone, Banknote, ChevronDown, CheckCircle2, Search, Receipt,
+  Plus, User as UserIcon, Car, Wallet, Pencil, Trash2, Users, Briefcase, Phone, Banknote, Receipt, CheckCircle2, X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn, formatDate } from "@/lib/utils";
@@ -10,6 +10,7 @@ import { EXPENSE_CATEGORY_LABEL, type Expense, type Employee, type ExpenseCatego
 import ResponsiveModal from "./ui/ResponsiveModal";
 import ResponsiveConfirm from "./ui/ResponsiveConfirm";
 import ReceiptModal from "./ui/ReceiptModal";
+import MultiDateCalendar from "./MultiDateCalendar";
 
 interface Props {
   initialExpenses: Expense[];
@@ -58,8 +59,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [filter, setFilter] = useState<FilterCat>("ALL");
-  const [woOpen, setWoOpen] = useState(false);
-  const [woSearch, setWoSearch] = useState("");
+  const [woActiveKey, setWoActiveKey] = useState<string | null>(null);
 
   // Expense form modal
   const [expFormOpen, setExpFormOpen] = useState(false);
@@ -92,19 +92,30 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
     [expenses, filter]
   );
 
-  // Pencarian di dropdown "Orderan yang Dikerjakan"
-  const filteredOrders = useMemo(() => {
-    const q = woSearch.trim().toLowerCase();
-    if (!q) return availableOrders;
-    return availableOrders.filter((o) => o.label.toLowerCase().includes(q));
-  }, [availableOrders, woSearch]);
+  // Kalender: map tanggal WIB-safe → daftar orderan; kunci WIB-safe dari id / timestamp (JANGAN toISOString slice mentah)
+  const ordersByDate = useMemo(() => {
+    const map = new Map<string, AvailableOrder[]>();
+    const dateKeyWIB = (ts: number) =>
+      new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ts));
+    for (const o of availableOrders) {
+      const key = o.id.includes(":") ? (o.id.split(":").pop() as string) : dateKeyWIB(o.date);
+      const arr = map.get(key);
+      if (arr) arr.push(o);
+      else map.set(key, [o]);
+    }
+    // sort tiap tanggal: WCC dulu baru acrylic
+    for (const [k, arr] of map) {
+      arr.sort((a, b) => (a.type === b.type ? 0 : a.type === "wcc" ? -1 : 1));
+      map.set(k, arr);
+    }
+    return map;
+  }, [availableOrders]);
 
   // ─── Expense CRUD ───────────────────────────────────────────────────────────
   const openCreateExpense = () => {
     setEditingExpense(null);
     setExpForm({ ...emptyExpenseForm(), employeeId: activeEmployees[0]?.id || "" });
-    setWoOpen(false);
-    setWoSearch("");
+    setWoActiveKey(null);
     setExpFormOpen(true);
   };
 
@@ -127,8 +138,7 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
       workOrderIds: availableOrders.filter((o) => e.workOrders.includes(o.label)).map((o) => o.id),
       note: e.note || "",
     });
-    setWoOpen(false);
-    setWoSearch("");
+    setWoActiveKey(null);
     setExpFormOpen(true);
   };
 
@@ -493,78 +503,94 @@ export default function ExpensesClient({ initialExpenses, initialEmployees, avai
           {expForm.category === "SALARY" && (
             <div>
               <label className="label">Orderan yang Dikerjakan</label>
-              <button
-                type="button"
-                onClick={() => setWoOpen((o) => !o)}
-                className="input text-left flex items-center justify-between gap-2"
-              >
-                <span className={cn("truncate", expForm.workOrderIds.length === 0 && "text-stone-400")}>
-                  {expForm.workOrderIds.length === 0
-                    ? "Pilih orderan (yang sudah lewat)"
-                    : `${expForm.workOrderIds.length} orderan dipilih`}
-                </span>
-                <ChevronDown size={14} className={cn("shrink-0 transition-transform text-stone-400", woOpen && "rotate-180")} />
-              </button>
-              {woOpen && (
-                <div className="mt-2 border border-stone-200 rounded-lg overflow-hidden">
-                  <div className="relative border-b border-stone-100 bg-stone-50/60">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
-                    <input
-                      type="text"
-                      placeholder="Cari orderan..."
-                      value={woSearch}
-                      onChange={(e) => setWoSearch(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 text-sm bg-transparent outline-none placeholder:text-stone-400"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="max-h-52 overflow-y-auto overscroll-contain divide-y divide-stone-50">
-                    {availableOrders.length === 0 ? (
-                      <p className="p-3 text-xs text-stone-400">Belum ada orderan yang lewat dari hari ini</p>
-                    ) : filteredOrders.length === 0 ? (
-                      <p className="p-3 text-xs text-stone-400">Tidak ada hasil untuk &quot;{woSearch}&quot;</p>
-                    ) : (
-                      filteredOrders.map((o) => {
-                        const checked = expForm.workOrderIds.includes(o.id);
-                        return (
-                          <label
-                            key={o.id}
-                            className={cn(
-                              "flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-stone-50 transition-colors",
-                              checked && "bg-orange-50/60"
-                            )}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleWorkOrder(o.id)}
-                              className="w-4 h-4 accent-orange-500 shrink-0"
-                            />
-                            <span className={cn("text-sm truncate", checked ? "text-stone-900 font-medium" : "text-stone-600")}>
-                              {o.label}
-                            </span>
-                            {checked && <CheckCircle2 size={14} className="text-orange-500 ml-auto shrink-0" />}
-                          </label>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              )}
-              {expForm.workOrderIds.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {expForm.workOrderIds.map((id) => {
-                    const o = availableOrders.find((x) => x.id === id);
-                    if (!o) return null;
+              <p className="text-[11px] text-stone-500 mb-2">Pilih tanggal kerja di kalender — hari ber-dot punya orderan (oranye=WCC, cyan=Acrylic). Tap hari 1-orderan langsung terpilih; hari multi-orderan tampil pilihan di bawah.</p>
+              {availableOrders.length === 0 ? (
+                <p className="p-3 text-xs text-stone-400 border border-stone-200 rounded-xl bg-stone-50">Belum ada orderan yang lewat dari hari ini</p>
+              ) : (
+                <>
+                  <MultiDateCalendar
+                    value={[]}
+                    onChange={() => {}}
+                    ordersByDate={ordersByDate}
+                    selectedOrderIds={expForm.workOrderIds}
+                    onToggleOrderId={toggleWorkOrder}
+                    activeDateKey={woActiveKey}
+                    onActiveDateChange={setWoActiveKey}
+                  />
+                  {/* Mini-list untuk hari dengan >1 orderan (mis. WCC+Acrylic sehari sama) */}
+                  {woActiveKey && (() => {
+                    const list = ordersByDate.get(woActiveKey);
+                    if (!list || list.length <= 1) return null;
                     return (
-                      <span
-                        key={id}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 text-xs font-medium"
-                      >
-                        {o.label}
-                      </span>
+                      <div className="mt-2 border border-stone-200 rounded-xl overflow-hidden bg-white">
+                        <div className="px-3 py-2 border-b border-stone-100 bg-stone-50 flex items-center justify-between">
+                          <span className="text-xs font-semibold text-stone-700">
+                            {new Date(`${woActiveKey}T12:00:00+07:00`).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} · {list.length} orderan
+                          </span>
+                          <button type="button" onClick={() => setWoActiveKey(null)} className="text-stone-400 hover:text-stone-600">
+                            <X size={14} />
+                          </button>
+                        </div>
+                        <div className="divide-y divide-stone-100 max-h-40 overflow-y-auto overscroll-contain">
+                          {list.map((o) => {
+                            const checked = expForm.workOrderIds.includes(o.id);
+                            return (
+                              <label
+                                key={o.id}
+                                className={cn(
+                                  "flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-stone-50 transition-colors",
+                                  checked && "bg-orange-50/60"
+                                )}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleWorkOrder(o.id)}
+                                  className="w-4 h-4 accent-orange-500 shrink-0"
+                                />
+                                <span className={cn("text-xs sm:text-sm truncate", checked ? "text-stone-900 font-medium" : "text-stone-600")}>{o.label}</span>
+                                <span className={cn("ml-auto shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border", o.type === "wcc" ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-cyan-50 text-cyan-700 border-cyan-200")}>
+                                  {o.type === "wcc" ? "WCC" : "Acrylic"}
+                                </span>
+                                {checked && <CheckCircle2 size={14} className="text-orange-500 shrink-0" />}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
                     );
-                  })}
+                  })()}
+                </>
+              )}
+              {/* Chips terpilih + Hapus semua */}
+              {expForm.workOrderIds.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-semibold text-stone-600">{expForm.workOrderIds.length} orderan dipilih</span>
+                    <button type="button" onClick={() => setExpForm((f) => ({ ...f, workOrderIds: [] }))} className="text-[11px] font-semibold text-red-500 hover:text-red-600">
+                      Hapus semua
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {expForm.workOrderIds.map((id) => {
+                      const o = availableOrders.find((x) => x.id === id);
+                      if (!o) return null;
+                      return (
+                        <span
+                          key={id}
+                          className={cn(
+                            "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border",
+                            o.type === "wcc" ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-cyan-50 text-cyan-700 border-cyan-200"
+                          )}
+                        >
+                          {o.label}
+                          <button type="button" onClick={() => toggleWorkOrder(id)} className="ml-0.5 hover:opacity-70">
+                            <X size={12} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
