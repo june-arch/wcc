@@ -166,6 +166,7 @@ export type Expense = {
 
 export type AvailableOrder = {
   id: string;
+  clientName: string;
   label: string;
   type: "wcc" | "acrylic";
   date: number; // timestamp event (untuk sort terbaru → terlama)

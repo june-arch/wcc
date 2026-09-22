@@ -41,6 +41,7 @@ export default async function ExpensesPage() {
       const keys = getBookingDateKeys(b as unknown as Parameters<typeof getBookingDateKeys>[0]);
       return keys.map((key) => ({
         id: `${b.id}:${key}`,
+        clientName: b.clientName,
         label: `${b.clientName} · ${shortDate(fromDateKey(key))} · WCC`,
         type: "wcc" as const,
         date: fromDateKey(key).getTime(),
@@ -48,6 +49,7 @@ export default async function ExpensesPage() {
     }),
     ...pastAcrylicOrders.map((o) => ({
       id: o.id,
+      clientName: o.clientName,
       label: `${o.clientName} · ${shortDate(o.eventDate)} · Acrylic`,
       type: "acrylic" as const,
       date: o.eventDate.getTime(),

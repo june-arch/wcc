@@ -15,6 +15,11 @@ function toKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function shortOrderName(order: AvailableOrder): string {
+  const name = order.clientName || order.label.split(" · ")[0] || order.label;
+  return name.trim().split(/\s+/)[0] || name;
+}
+
 interface Props {
   value: string[]; // YYYY-MM-DD
   onChange: (next: string[]) => void;
@@ -97,11 +102,11 @@ export default function MultiDateCalendar({ value, onChange, ordersByDate, selec
           if (isOrderMode) {
             const list = ordersByDate!.get(k);
             const hasOrders = !!list && list.length > 0;
-            const wccCount = list ? list.filter((o) => o.type === "wcc").length : 0;
-            const acrCount = list ? list.filter((o) => o.type === "acrylic").length : 0;
             const hasSelected = list ? list.some((o) => selectedOrderSet.has(o.id)) : false;
             const isActive = activeDateKey === k;
             const disabled = !hasOrders;
+            const visibleOrders = list?.slice(0, 2) ?? [];
+            const hiddenCount = list ? list.length - visibleOrders.length : 0;
             return (
               <button
                 key={k + d.toISOString()}
@@ -109,7 +114,7 @@ export default function MultiDateCalendar({ value, onChange, ordersByDate, selec
                 disabled={disabled}
                 onClick={() => handleOrderDayClick(d)}
                 className={cn(
-                  "h-9 min-h-[36px] text-xs font-semibold flex flex-col items-center justify-center relative bg-white transition-colors select-none",
+                  "min-h-[64px] text-xs font-semibold flex flex-col items-stretch justify-start relative bg-white transition-colors select-none px-1 py-1",
                   !inMonth && "text-stone-300 bg-stone-50/60",
                   disabled && "bg-white text-stone-300 cursor-not-allowed opacity-60",
                   !disabled && !hasSelected && "hover:bg-stone-50 text-stone-700",
@@ -122,16 +127,31 @@ export default function MultiDateCalendar({ value, onChange, ordersByDate, selec
                 title={hasOrders ? list!.map((o) => o.label).join(" | ") + (holiday ? ` · ${holiday.label}` : "") : holiday ? holiday.label : undefined}
                 aria-label={`${k}${hasOrders ? ` — ${list!.length} orderan` : ""}`}
               >
-                <span className={cn("leading-none", hasSelected && "text-white")}>{d.getDate()}</span>
+                <span className="flex items-center justify-between gap-1 leading-none">
+                  <span className={cn(hasSelected && "text-white")}>{d.getDate()}</span>
+                  {hiddenCount > 0 && (
+                    <span className={cn("text-[8px] font-bold leading-none", hasSelected ? "text-white" : "text-stone-500")}>
+                      +{hiddenCount}
+                    </span>
+                  )}
+                </span>
                 {hasOrders && (
-                  <span className="flex items-center gap-0.5 mt-0.5">
-                    {wccCount > 0 && <span className={cn("w-1.5 h-1.5 rounded-full", hasSelected ? "bg-white" : "bg-orange-500")} />}
-                    {acrCount > 0 && <span className={cn("w-1.5 h-1.5 rounded-full", hasSelected ? "bg-white/90" : "bg-cyan-500")} />}
-                    {list!.length > 1 && (
-                      <span className={cn("text-[8px] font-bold leading-none ml-0.5", hasSelected ? "text-white" : wccCount && acrCount ? "text-stone-600" : wccCount ? "text-orange-600" : "text-cyan-600")}>
-                        ×{list!.length}
+                  <span className="mt-1 space-y-0.5">
+                    {visibleOrders.map((order) => (
+                      <span
+                        key={order.id}
+                        className={cn(
+                          "block w-full rounded px-1 py-0.5 text-left text-[9px] font-semibold leading-tight truncate",
+                          hasSelected
+                            ? "bg-white/20 text-white"
+                            : order.type === "wcc"
+                              ? "bg-orange-100 text-orange-800"
+                              : "bg-cyan-100 text-cyan-800"
+                        )}
+                      >
+                        {shortOrderName(order)}
                       </span>
-                    )}
+                    ))}
                   </span>
                 )}
                 {!hasOrders && holiday && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-red-300" />}
