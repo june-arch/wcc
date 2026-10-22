@@ -186,6 +186,26 @@ export default function FinanceClient({ bookings, expenses }: Props) {
               );
             })}
           </div>
+
+          {/* Total pemasukan - pengeluaran */}
+          <div className="px-4 sm:px-5 py-4 bg-stone-50 border-t-2 border-stone-200 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total Pemasukan</span>
+              <span className="text-sm font-bold text-emerald-600">Rp {stats.totalPaid.toLocaleString("id-ID")}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total Pengeluaran</span>
+              <span className="text-sm font-bold text-red-500">- Rp {stats.totalExpenses.toLocaleString("id-ID")}</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 pt-2 border-t border-stone-200">
+              <span className="text-sm font-bold text-stone-700">SELISIH (LABA BERSIH)</span>
+              <span
+                className={cn("text-sm font-bold", stats.netProfit >= 0 ? "text-emerald-600" : "text-red-500")}
+              >
+                {stats.netProfit < 0 ? "- " : ""}Rp {Math.abs(stats.netProfit).toLocaleString("id-ID")}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Per booking table */}
