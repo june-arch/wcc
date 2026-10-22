@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown, Banknote, AlertCircle, CheckCircle2, Wallet, PieChart, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { cn, formatBookingDates } from "@/lib/utils";
+import { cn, formatBookingDates, formatCurrency } from "@/lib/utils";
 
 import type { BookingWithRelations, Expense } from "@/types";
 
@@ -88,29 +88,33 @@ export default function FinanceClient({ bookings, expenses }: Props) {
     return { totalPackage, totalPaid, totalUnpaid, lunas, belumLunas, byMonth, months, totalExpenses, byExpenseMonth, netProfit };
   }, [bookings, expenses]);
 
+  const pctOf = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
+  const signedCurrency = (amount: number) => (amount < 0 ? `- ${formatCurrency(Math.abs(amount))}` : formatCurrency(amount));
+
   const statCards = [
     {
       label: "Total Nilai Kontrak",
-      value: `Rp ${stats.totalPackage.toLocaleString("id-ID")}`,
+      value: formatCurrency(stats.totalPackage),
       icon: Banknote,
       color: "bg-stone-100 text-stone-600",
       border: "border-stone-200",
+      sub: `${bookings.length} booking`,
     },
     {
       label: "Sudah Diterima",
-      value: `Rp ${stats.totalPaid.toLocaleString("id-ID")}`,
+      value: formatCurrency(stats.totalPaid),
       icon: TrendingUp,
       color: "bg-emerald-100 text-emerald-600",
       border: "border-emerald-200",
-      pct: Math.round((stats.totalPaid / stats.totalPackage) * 100),
+      pct: pctOf(stats.totalPaid, stats.totalPackage),
     },
     {
       label: "Belum Dibayar",
-      value: `Rp ${stats.totalUnpaid.toLocaleString("id-ID")}`,
+      value: formatCurrency(stats.totalUnpaid),
       icon: AlertCircle,
       color: "bg-red-100 text-red-500",
       border: "border-red-200",
-      pct: Math.round((stats.totalUnpaid / stats.totalPackage) * 100),
+      pct: pctOf(stats.totalUnpaid, stats.totalPackage),
     },
     {
       label: "Lunas",
@@ -122,7 +126,7 @@ export default function FinanceClient({ bookings, expenses }: Props) {
     },
     {
       label: "Total Pengeluaran",
-      value: `Rp ${stats.totalExpenses.toLocaleString("id-ID")}`,
+      value: formatCurrency(stats.totalExpenses),
       icon: TrendingDown,
       color: "bg-red-100 text-red-500",
       border: "border-red-200",
@@ -130,11 +134,12 @@ export default function FinanceClient({ bookings, expenses }: Props) {
     },
     {
       label: "Laba Bersih",
-      value: `Rp ${stats.netProfit.toLocaleString("id-ID")}`,
+      value: signedCurrency(stats.netProfit),
       icon: Wallet,
       color: stats.netProfit >= 0 ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-500",
       border: stats.netProfit >= 0 ? "border-emerald-200" : "border-red-200",
-      sub: stats.netProfit >= 0 ? "pemasukan dikurangi pengeluaran" : "pengeluaran melebihi pemasukan",
+      valueColor: stats.netProfit >= 0 ? "text-stone-900" : "text-red-600",
+      sub: "pemasukan − pengeluaran",
     },
   ];
 
@@ -151,12 +156,14 @@ export default function FinanceClient({ bookings, expenses }: Props) {
           <div key={card.label} className={cn("card p-4 md:p-5 border", card.border)}>
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">{card.label}</p>
-                <p className="text-lg md:text-xl font-bold text-stone-900 mt-1 leading-tight">{card.value}</p>
+                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">{card.label}</p>
+                <p className={cn("text-lg md:text-xl font-bold mt-1 leading-tight tabular-nums", card.valueColor ?? "text-stone-900")}>
+                  {card.value}
+                </p>
                 {card.pct !== undefined && (
-                  <p className="text-xs text-stone-400 mt-1">{card.pct}% dari total</p>
+                  <p className="text-xs text-stone-500 mt-1 tabular-nums">{card.pct}% dari total</p>
                 )}
-                {card.sub && <p className="text-xs text-stone-400 mt-1">{card.sub}</p>}
+                {card.sub && <p className="text-xs text-stone-500 mt-1">{card.sub}</p>}
               </div>
               <div className={cn("w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center shrink-0", card.color)}>
                 <card.icon size={16} className="md:w-[17px] md:h-[17px]" />
@@ -171,9 +178,9 @@ export default function FinanceClient({ bookings, expenses }: Props) {
         <div className="card">
           <div className="px-4 sm:px-5 py-4 border-b border-stone-100">
             <h2 className="font-bold text-stone-900 text-sm">Pemasukan Per Bulan</h2>
-            <p className="text-xs text-stone-400 mt-0.5">Pemasukan, pengeluaran & laba bersih tiap bulan</p>
+            <p className="text-xs text-stone-500 mt-0.5">Masuk, keluar & laba bersih tiap bulan</p>
           </div>
-          <div className="divide-y divide-stone-50">
+          <div className="divide-y divide-stone-100">
             {stats.months.length === 0 && (
               <div className="px-5 py-8 text-center">
                 <PieChart size={24} className="mx-auto text-stone-300 mb-2" />
@@ -191,34 +198,50 @@ export default function FinanceClient({ bookings, expenses }: Props) {
               const net = paid - expenseTotal;
               const pct = packageTotal > 0 ? Math.min(100, Math.round((paid / packageTotal) * 100)) : 0;
               return (
-                <div key={month} className="px-5 py-3.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div>
-                      <span className="text-sm font-semibold text-stone-800">{label}</span>
-                      <span className="text-xs text-stone-400 ml-2">{count} booking</span>
+                <div key={month} className="px-4 sm:px-5 py-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    {/* Identitas bulan */}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-stone-900">{label}</p>
+                      <p className="text-xs text-stone-500 mt-0.5 tabular-nums">
+                        {count > 0 ? `${count} booking` : "tanpa booking"}
+                      </p>
+                      <p className="text-xs text-stone-500 tabular-nums">tagihan {formatCurrency(packageTotal)}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-600">Rp {paid.toLocaleString("id-ID")}</p>
-                      <p className="text-xs text-stone-400">dari Rp {packageTotal.toLocaleString("id-ID")}</p>
+
+                    {/* Ledger: angka rata kanan + tabular supaya deret digit sejajar antar bulan */}
+                    <div className="shrink-0 text-right tabular-nums">
+                      <div className="flex items-baseline justify-end gap-2">
+                        <span className="text-[11px] font-medium text-stone-500">Masuk</span>
+                        <span className="w-28 text-sm font-semibold text-emerald-600">{formatCurrency(paid)}</span>
+                      </div>
+                      <div className="flex items-baseline justify-end gap-2 mt-0.5">
+                        <span className="text-[11px] font-medium text-stone-500">Keluar</span>
+                        <span className="w-28 text-sm font-semibold text-red-500">{formatCurrency(expenseTotal)}</span>
+                      </div>
+                      <div className="flex items-baseline justify-end gap-2 mt-1 pt-1.5 border-t border-stone-200">
+                        <span className="text-[11px] font-semibold text-stone-600">Laba</span>
+                        <span className={cn("w-28 text-sm font-bold", net >= 0 ? "text-stone-900" : "text-red-600")}>
+                          {signedCurrency(net)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${pct}%`, background: pct === 100 ? "#10b981" : "var(--brand)" }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between gap-3 mt-2 pt-2 border-t border-stone-100">
-                    <span className="text-xs text-stone-400">
-                      Pengeluaran{" "}
-                      <span className="font-semibold text-red-500">Rp {expenseTotal.toLocaleString("id-ID")}</span>
-                    </span>
-                    <span className="text-xs text-stone-400">
-                      Laba bersih{" "}
-                      <span className={cn("font-semibold", net >= 0 ? "text-emerald-600" : "text-red-500")}>
-                        {net < 0 ? "- " : ""}Rp {Math.abs(net).toLocaleString("id-ID")}
+
+                  {/* Progres penerimaan */}
+                  <div className="mt-2.5">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] text-stone-500">Penerimaan</span>
+                      <span className="text-[11px] font-semibold text-stone-600 tabular-nums">
+                        {pct >= 100 ? "Lunas" : `${pct}%`}
                       </span>
-                    </span>
+                    </div>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${pct}%`, background: pct >= 100 ? "#10b981" : "var(--brand)" }}
+                      />
+                    </div>
                   </div>
                 </div>
               );
@@ -227,22 +250,25 @@ export default function FinanceClient({ bookings, expenses }: Props) {
 
           {/* Total pemasukan - pengeluaran */}
           {stats.months.length > 0 && (
-            <div className="px-4 sm:px-5 py-4 bg-stone-50 border-t-2 border-stone-200 space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total Pemasukan</span>
-                <span className="text-sm font-bold text-emerald-600">Rp {stats.totalPaid.toLocaleString("id-ID")}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total Pengeluaran</span>
-                <span className="text-sm font-bold text-red-500">- Rp {stats.totalExpenses.toLocaleString("id-ID")}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3 pt-2 border-t border-stone-200">
-                <span className="text-sm font-bold text-stone-700">SELISIH (LABA BERSIH)</span>
-                <span
-                  className={cn("text-sm font-bold", stats.netProfit >= 0 ? "text-emerald-600" : "text-red-500")}
-                >
-                  {stats.netProfit < 0 ? "- " : ""}Rp {Math.abs(stats.netProfit).toLocaleString("id-ID")}
-                </span>
+            <div className="px-4 sm:px-5 py-4 bg-stone-50 border-t-2 border-stone-200">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-2">
+                Total keseluruhan
+              </p>
+              <div className="tabular-nums">
+                <div className="flex items-baseline justify-end gap-2">
+                  <span className="text-[11px] font-medium text-stone-500">Masuk</span>
+                  <span className="w-28 text-sm font-bold text-emerald-600">{formatCurrency(stats.totalPaid)}</span>
+                </div>
+                <div className="flex items-baseline justify-end gap-2 mt-0.5">
+                  <span className="text-[11px] font-medium text-stone-500">Keluar</span>
+                  <span className="w-28 text-sm font-bold text-red-500">{formatCurrency(stats.totalExpenses)}</span>
+                </div>
+                <div className="flex items-baseline justify-end gap-2 mt-1 pt-1.5 border-t border-stone-300">
+                  <span className="text-[11px] font-semibold text-stone-600">Laba bersih</span>
+                  <span className={cn("w-28 text-sm font-bold", stats.netProfit >= 0 ? "text-stone-900" : "text-red-600")}>
+                    {signedCurrency(stats.netProfit)}
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -257,10 +283,10 @@ export default function FinanceClient({ bookings, expenses }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-stone-50 border-b border-stone-100">
-                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-stone-400 uppercase tracking-wider">Klien</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-stone-400 uppercase tracking-wider">Paket</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-stone-400 uppercase tracking-wider">Dibayar</th>
-                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-stone-400 uppercase tracking-wider">Sisa</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Klien</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Paket</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Dibayar</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-semibold text-stone-500 uppercase tracking-wider">Sisa</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-50">
@@ -277,19 +303,21 @@ export default function FinanceClient({ bookings, expenses }: Props) {
                     <tr key={b.id} className="table-row">
                       <td className="px-4 py-3">
                         <p className="font-medium text-stone-900 truncate max-w-32">{b.clientName}</p>
-                        <p className="text-xs text-stone-400">{formatBookingDates(b as unknown as Parameters<typeof formatBookingDates>[0])}</p>
+                        <p className="text-xs text-stone-500">{formatBookingDates(b as unknown as Parameters<typeof formatBookingDates>[0])}</p>
                       </td>
-                      <td className="px-4 py-3 text-right text-stone-700 font-medium">
+                      <td className="px-4 py-3 text-right text-stone-700 font-medium tabular-nums">
                         {totalPrice.toLocaleString("id-ID")}
                       </td>
-                      <td className="px-4 py-3 text-right font-semibold text-emerald-600">
+                      <td className="px-4 py-3 text-right font-semibold text-emerald-600 tabular-nums">
                         {totalPaid.toLocaleString("id-ID")}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right tabular-nums">
                         {sisa > 0 ? (
                           <span className="text-red-500 font-semibold">{sisa.toLocaleString("id-ID")}</span>
                         ) : (
-                          <span className="text-emerald-500 font-bold">✓ Lunas</span>
+                          <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                            <CheckCircle2 size={13} strokeWidth={2.5} /> Lunas
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -299,9 +327,9 @@ export default function FinanceClient({ bookings, expenses }: Props) {
               <tfoot>
                 <tr className="bg-stone-50 border-t-2 border-stone-200">
                   <td className="px-4 py-3 font-bold text-stone-700 text-sm">TOTAL</td>
-                  <td className="px-4 py-3 text-right font-bold text-stone-900">{stats.totalPackage.toLocaleString("id-ID")}</td>
-                  <td className="px-4 py-3 text-right font-bold text-emerald-600">{stats.totalPaid.toLocaleString("id-ID")}</td>
-                  <td className="px-4 py-3 text-right font-bold text-red-500">{stats.totalUnpaid.toLocaleString("id-ID")}</td>
+                  <td className="px-4 py-3 text-right font-bold text-stone-900 tabular-nums">{stats.totalPackage.toLocaleString("id-ID")}</td>
+                  <td className="px-4 py-3 text-right font-bold text-emerald-600 tabular-nums">{stats.totalPaid.toLocaleString("id-ID")}</td>
+                  <td className="px-4 py-3 text-right font-bold text-red-500 tabular-nums">{stats.totalUnpaid.toLocaleString("id-ID")}</td>
                 </tr>
               </tfoot>
             </table>
@@ -314,7 +342,7 @@ export default function FinanceClient({ bookings, expenses }: Props) {
         <div className="px-4 sm:px-5 py-4 border-b border-stone-100 flex items-center justify-between gap-3">
           <div>
             <h2 className="font-bold text-stone-900 text-sm">Pengeluaran</h2>
-            <p className="text-xs text-stone-400 mt-0.5">Gaji karyawan, bensin mobil & lainnya</p>
+            <p className="text-xs text-stone-500 mt-0.5">Gaji karyawan, bensin mobil & lainnya</p>
           </div>
           <Link href="/dashboard/expenses" className="text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1 shrink-0">
             Kelola <ArrowRight size={14} />
@@ -327,33 +355,33 @@ export default function FinanceClient({ bookings, expenses }: Props) {
             <p className="text-stone-500 text-sm font-medium">Belum ada pengeluaran tercatat</p>
           </div>
         ) : (
-          <div className="divide-y divide-stone-50">
+          <div className="divide-y divide-stone-100">
             {stats.months
               .filter((month) => stats.byExpenseMonth[month])
               .map((month) => {
                 const data = stats.byExpenseMonth[month];
                 const parts: string[] = [];
-                if (data.salary > 0) parts.push(`Gaji ${data.salary.toLocaleString("id-ID")}`);
-                if (data.fuel > 0) parts.push(`Bensin ${data.fuel.toLocaleString("id-ID")}`);
-                if (data.other > 0) parts.push(`Lainnya ${data.other.toLocaleString("id-ID")}`);
+                if (data.salary > 0) parts.push(`Gaji ${formatCurrency(data.salary)}`);
+                if (data.fuel > 0) parts.push(`Bensin ${formatCurrency(data.fuel)}`);
+                if (data.other > 0) parts.push(`Lainnya ${formatCurrency(data.other)}`);
                 return (
-                  <div key={month} className="px-5 py-3.5">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div>
-                        <span className="text-sm font-semibold text-stone-800">{data.label}</span>
-                        <span className="text-xs text-stone-400 ml-2">{data.count} catatan</span>
+                  <div key={month} className="px-4 sm:px-5 py-3.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-stone-900">{data.label}</p>
+                        <p className="text-xs text-stone-500 mt-0.5 tabular-nums">{data.count} catatan</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-red-500">Rp {data.total.toLocaleString("id-ID")}</p>
-                        <p className="text-xs text-stone-400">{parts.join(" · ")}</p>
+                      <div className="text-right tabular-nums">
+                        <p className="text-sm font-semibold text-red-500">{formatCurrency(data.total)}</p>
+                        <p className="text-xs text-stone-500 mt-0.5">{parts.join(" · ")}</p>
                       </div>
                     </div>
                   </div>
                 );
               })}
-            <div className="px-5 py-3.5 bg-stone-50 flex items-center justify-between">
-              <span className="text-sm font-bold text-stone-700">TOTAL PENGELUARAN</span>
-              <span className="text-sm font-bold text-red-500">Rp {stats.totalExpenses.toLocaleString("id-ID")}</span>
+            <div className="px-4 sm:px-5 py-3.5 bg-stone-50 flex items-center justify-between gap-3 tabular-nums">
+              <span className="text-xs font-semibold uppercase tracking-wider text-stone-600">Total pengeluaran</span>
+              <span className="text-sm font-bold text-red-500">{formatCurrency(stats.totalExpenses)}</span>
             </div>
           </div>
         )}
