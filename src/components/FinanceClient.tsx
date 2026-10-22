@@ -12,8 +12,14 @@ interface Props {
   expenses: Expense[];
 }
 
-const monthKey = (d: Date | string) =>
-  new Date(d).toLocaleDateString("id-ID", { year: "numeric", month: "long" });
+// Key "YYYY-MM" agar bisa diurutkan kronologis, label untuk ditampilkan
+const monthInfo = (d: Date | string) => {
+  const date = new Date(d);
+  return {
+    key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+    label: date.toLocaleDateString("id-ID", { year: "numeric", month: "long" }),
+  };
+};
 
 export default function FinanceClient({ bookings, expenses }: Props) {
   const stats = useMemo(() => {
@@ -44,10 +50,10 @@ export default function FinanceClient({ bookings, expenses }: Props) {
     const totalUnpaid = totalPackage - totalPaid;
 
     // Month breakdown (pemasukan)
-    const byMonth: Record<string, { package: number; paid: number; count: number }> = {};
+    const byMonth: Record<string, { label: string; package: number; paid: number; count: number }> = {};
     bookings.forEach((b) => {
-      const key = monthKey(b.startDate);
-      if (!byMonth[key]) byMonth[key] = { package: 0, paid: 0, count: 0 };
+      const { key, label } = monthInfo(b.startDate);
+      if (!byMonth[key]) byMonth[key] = { label, package: 0, paid: 0, count: 0 };
 
       const packagePrice = b.pricePackage?.price || 0;
       const addOnsTotal = b.bookingAddOns?.reduce((sum, a) => sum + a.price, 0) || 0;
@@ -63,18 +69,23 @@ export default function FinanceClient({ bookings, expenses }: Props) {
 
     // Expenses
     const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
-    const byExpenseMonth: Record<string, { total: number; salary: number; fuel: number; other: number; count: number }> = {};
+    const byExpenseMonth: Record<string, { label: string; total: number; salary: number; fuel: number; other: number; count: number }> = {};
     expenses.forEach((e) => {
-      const key = monthKey(e.date);
-      if (!byExpenseMonth[key]) byExpenseMonth[key] = { total: 0, salary: 0, fuel: 0, other: 0, count: 0 };
+      const { key, label } = monthInfo(e.date);
+      if (!byExpenseMonth[key]) byExpenseMonth[key] = { label, total: 0, salary: 0, fuel: 0, other: 0, count: 0 };
       byExpenseMonth[key].total += e.amount;
       byExpenseMonth[key][e.category.toLowerCase() as "salary" | "fuel" | "other"] += e.amount;
       byExpenseMonth[key].count++;
     });
 
+    // Semua bulan (punya pemasukan dan/atau pengeluaran), urut kronologis
+    const months = Array.from(
+      new Set([...Object.keys(byMonth), ...Object.keys(byExpenseMonth)])
+    ).sort();
+
     const netProfit = totalPaid - totalExpenses;
 
-    return { totalPackage, totalPaid, totalUnpaid, lunas, belumLunas, byMonth, totalExpenses, byExpenseMonth, netProfit };
+    return { totalPackage, totalPaid, totalUnpaid, lunas, belumLunas, byMonth, months, totalExpenses, byExpenseMonth, netProfit };
   }, [bookings, expenses]);
 
   const statCards = [
@@ -160,20 +171,35 @@ export default function FinanceClient({ bookings, expenses }: Props) {
         <div className="card">
           <div className="px-4 sm:px-5 py-4 border-b border-stone-100">
             <h2 className="font-bold text-stone-900 text-sm">Pemasukan Per Bulan</h2>
+            <p className="text-xs text-stone-400 mt-0.5">Pemasukan, pengeluaran & laba bersih tiap bulan</p>
           </div>
           <div className="divide-y divide-stone-50">
-            {Object.entries(stats.byMonth).map(([month, data]) => {
-              const pct = Math.round((data.paid / data.package) * 100);
+            {stats.months.length === 0 && (
+              <div className="px-5 py-8 text-center">
+                <PieChart size={24} className="mx-auto text-stone-300 mb-2" />
+                <p className="text-stone-500 text-sm font-medium">Belum ada data pemasukan</p>
+              </div>
+            )}
+            {stats.months.map((month) => {
+              const data = stats.byMonth[month];
+              const expense = stats.byExpenseMonth[month];
+              const label = data?.label || expense?.label || "";
+              const paid = data?.paid ?? 0;
+              const packageTotal = data?.package ?? 0;
+              const count = data?.count ?? 0;
+              const expenseTotal = expense?.total ?? 0;
+              const net = paid - expenseTotal;
+              const pct = packageTotal > 0 ? Math.min(100, Math.round((paid / packageTotal) * 100)) : 0;
               return (
                 <div key={month} className="px-5 py-3.5">
                   <div className="flex items-center justify-between mb-1.5">
                     <div>
-                      <span className="text-sm font-semibold text-stone-800 capitalize">{month}</span>
-                      <span className="text-xs text-stone-400 ml-2">{data.count} booking</span>
+                      <span className="text-sm font-semibold text-stone-800">{label}</span>
+                      <span className="text-xs text-stone-400 ml-2">{count} booking</span>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-emerald-600">Rp {data.paid.toLocaleString("id-ID")}</p>
-                      <p className="text-xs text-stone-400">dari Rp {data.package.toLocaleString("id-ID")}</p>
+                      <p className="text-sm font-bold text-emerald-600">Rp {paid.toLocaleString("id-ID")}</p>
+                      <p className="text-xs text-stone-400">dari Rp {packageTotal.toLocaleString("id-ID")}</p>
                     </div>
                   </div>
                   <div className="progress-bar">
@@ -182,30 +208,44 @@ export default function FinanceClient({ bookings, expenses }: Props) {
                       style={{ width: `${pct}%`, background: pct === 100 ? "#10b981" : "var(--brand)" }}
                     />
                   </div>
+                  <div className="flex items-center justify-between gap-3 mt-2 pt-2 border-t border-stone-100">
+                    <span className="text-xs text-stone-400">
+                      Pengeluaran{" "}
+                      <span className="font-semibold text-red-500">Rp {expenseTotal.toLocaleString("id-ID")}</span>
+                    </span>
+                    <span className="text-xs text-stone-400">
+                      Laba bersih{" "}
+                      <span className={cn("font-semibold", net >= 0 ? "text-emerald-600" : "text-red-500")}>
+                        {net < 0 ? "- " : ""}Rp {Math.abs(net).toLocaleString("id-ID")}
+                      </span>
+                    </span>
+                  </div>
                 </div>
               );
             })}
           </div>
 
           {/* Total pemasukan - pengeluaran */}
-          <div className="px-4 sm:px-5 py-4 bg-stone-50 border-t-2 border-stone-200 space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total Pemasukan</span>
-              <span className="text-sm font-bold text-emerald-600">Rp {stats.totalPaid.toLocaleString("id-ID")}</span>
+          {stats.months.length > 0 && (
+            <div className="px-4 sm:px-5 py-4 bg-stone-50 border-t-2 border-stone-200 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total Pemasukan</span>
+                <span className="text-sm font-bold text-emerald-600">Rp {stats.totalPaid.toLocaleString("id-ID")}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total Pengeluaran</span>
+                <span className="text-sm font-bold text-red-500">- Rp {stats.totalExpenses.toLocaleString("id-ID")}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 pt-2 border-t border-stone-200">
+                <span className="text-sm font-bold text-stone-700">SELISIH (LABA BERSIH)</span>
+                <span
+                  className={cn("text-sm font-bold", stats.netProfit >= 0 ? "text-emerald-600" : "text-red-500")}
+                >
+                  {stats.netProfit < 0 ? "- " : ""}Rp {Math.abs(stats.netProfit).toLocaleString("id-ID")}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Total Pengeluaran</span>
-              <span className="text-sm font-bold text-red-500">- Rp {stats.totalExpenses.toLocaleString("id-ID")}</span>
-            </div>
-            <div className="flex items-center justify-between gap-3 pt-2 border-t border-stone-200">
-              <span className="text-sm font-bold text-stone-700">SELISIH (LABA BERSIH)</span>
-              <span
-                className={cn("text-sm font-bold", stats.netProfit >= 0 ? "text-emerald-600" : "text-red-500")}
-              >
-                {stats.netProfit < 0 ? "- " : ""}Rp {Math.abs(stats.netProfit).toLocaleString("id-ID")}
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Per booking table */}
@@ -288,26 +328,29 @@ export default function FinanceClient({ bookings, expenses }: Props) {
           </div>
         ) : (
           <div className="divide-y divide-stone-50">
-            {Object.entries(stats.byExpenseMonth).map(([month, data]) => {
-              const parts: string[] = [];
-              if (data.salary > 0) parts.push(`Gaji ${data.salary.toLocaleString("id-ID")}`);
-              if (data.fuel > 0) parts.push(`Bensin ${data.fuel.toLocaleString("id-ID")}`);
-              if (data.other > 0) parts.push(`Lainnya ${data.other.toLocaleString("id-ID")}`);
-              return (
-                <div key={month} className="px-5 py-3.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div>
-                      <span className="text-sm font-semibold text-stone-800 capitalize">{month}</span>
-                      <span className="text-xs text-stone-400 ml-2">{data.count} catatan</span>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-red-500">Rp {data.total.toLocaleString("id-ID")}</p>
-                      <p className="text-xs text-stone-400">{parts.join(" · ")}</p>
+            {stats.months
+              .filter((month) => stats.byExpenseMonth[month])
+              .map((month) => {
+                const data = stats.byExpenseMonth[month];
+                const parts: string[] = [];
+                if (data.salary > 0) parts.push(`Gaji ${data.salary.toLocaleString("id-ID")}`);
+                if (data.fuel > 0) parts.push(`Bensin ${data.fuel.toLocaleString("id-ID")}`);
+                if (data.other > 0) parts.push(`Lainnya ${data.other.toLocaleString("id-ID")}`);
+                return (
+                  <div key={month} className="px-5 py-3.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div>
+                        <span className="text-sm font-semibold text-stone-800">{data.label}</span>
+                        <span className="text-xs text-stone-400 ml-2">{data.count} catatan</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-red-500">Rp {data.total.toLocaleString("id-ID")}</p>
+                        <p className="text-xs text-stone-400">{parts.join(" · ")}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
             <div className="px-5 py-3.5 bg-stone-50 flex items-center justify-between">
               <span className="text-sm font-bold text-stone-700">TOTAL PENGELUARAN</span>
               <span className="text-sm font-bold text-red-500">Rp {stats.totalExpenses.toLocaleString("id-ID")}</span>
